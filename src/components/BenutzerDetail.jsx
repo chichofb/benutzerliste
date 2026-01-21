@@ -1,13 +1,5 @@
 /**
  * BENUTZERDETAIL.JSX - Detail-Ansicht für einzelnen Benutzer
- * 
- * Diese Komponente zeigt alle Details eines Benutzers an:
- * - Persönliche Daten (Vorname, Nachname, Username, Email, Telefon)
- * - Organisationen mit zugehörigen Rollen
- * - Status (Aktiv/Gelöscht)
- * 
- * Die Komponente wird in einem Modal (Dialog) angezeigt und
- * erhält die Benutzerdaten als Prop von der Benutzerliste.
  */
 
 import React from 'react';
@@ -40,8 +32,28 @@ const BenutzerDetail = ({ user }) => {
                 {/* ===== PERSÖNLICHE DATEN ===== */}
                 <Grid item xs={12}>
                     {/* Überschrift mit Icon */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                        <PersonIcon sx={{ color: '#4169E1', fontSize: 24 }} />
+                    <Box sx={{
+                        mb: 2,
+                        p: 2,
+                        borderRadius: 3,
+                        background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
+                        border: '1px solid rgba(65, 105, 225, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5
+                    }}>
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 36,
+                            height: 36,
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                            boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+                        }}>
+                            <PersonIcon sx={{ color: 'white', fontSize: 20 }} />
+                        </Box>
                         <Typography variant="h6" sx={{ fontWeight: 700, color: '#4169E1' }}>
                             Persönliche Daten
                         </Typography>
@@ -53,36 +65,50 @@ const BenutzerDetail = ({ user }) => {
                     <TextField
                         fullWidth
                         label="Vorname"
-                        value={user.firstname || user.firstName || ''}  // Unterstützt verschiedene Feldnamen
-                        InputProps={{ readOnly: true }}  // Nur-Lesen-Modus
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                backgroundColor: '#F5F7FA',  // Heller Hintergrund für Nur-Lesen-Felder
-                            },
-                        }}
-                    />
-                </Grid>
-
-                {/* Nachname - 50% Breite auf Desktop */}
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        fullWidth
-                        label="Nachname"
-                        value={user.lastname || user.lastName || ''}  // Unterstützt verschiedene Feldnamen
+                        value={user.firstName || ''}
                         InputProps={{ readOnly: true }}
                         variant="outlined"
                         size="small"
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 backgroundColor: '#F5F7FA',
+                                borderRadius: 2,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: '#E8EEF7',
+                                    '& fieldset': {
+                                        borderColor: '#4169E1'
+                                    }
+                                }
                             },
                         }}
                     />
                 </Grid>
 
-                {/* Benutzername - Volle Breite mit @-Symbol */}
+                <Grid item xs={12} sm={6}>
+                    <TextField
+                        fullWidth
+                        label="Nachname"
+                        value={user.lastName || ''}
+                        InputProps={{ readOnly: true }}
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: '#F5F7FA',
+                                borderRadius: 2,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: '#E8EEF7',
+                                    '& fieldset': {
+                                        borderColor: '#4169E1'
+                                    }
+                                }
+                            },
+                        }}
+                    />
+                </Grid>
+
                 <Grid item xs={12}>
                     <TextField
                         fullWidth
@@ -90,40 +116,53 @@ const BenutzerDetail = ({ user }) => {
                         value={user.username || ''}
                         InputProps={{
                             readOnly: true,
-                            // @-Symbol vor dem Benutzernamen anzeigen
-                            startAdornment: <Typography sx={{ mr: 1, color: '#999' }}>@</Typography>
+                            startAdornment: <Typography sx={{ mr: 1, color: '#4169E1', fontWeight: 600 }}>@</Typography>
                         }}
                         variant="outlined"
                         size="small"
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 backgroundColor: '#F5F7FA',
+                                borderRadius: 2,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: '#E8EEF7',
+                                    '& fieldset': {
+                                        borderColor: '#4169E1'
+                                    }
+                                }
                             },
                         }}
                     />
                 </Grid>
 
-                {/* Email - 50% Breite, blaue Schrift */}
                 <Grid item xs={12} sm={6}>
                     <TextField
                         fullWidth
                         label="Email"
-                        value={user.mail || user.email || ''}  // Unterstützt verschiedene Feldnamen
+                        value={user.mail || ''}
                         InputProps={{ readOnly: true }}
                         variant="outlined"
                         size="small"
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 backgroundColor: '#F5F7FA',
+                                borderRadius: 2,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: '#E8EEF7',
+                                    '& fieldset': {
+                                        borderColor: '#4169E1'
+                                    }
+                                }
                             },
                             '& .MuiOutlinedInput-input': {
-                                color: '#4169E1',  // Email in Royal Blue hervorheben
+                                color: '#4169E1',
                             },
                         }}
                     />
                 </Grid>
 
-                {/* Telefon - 50% Breite */}
                 <Grid item xs={12} sm={6}>
                     <TextField
                         fullWidth
@@ -135,22 +174,49 @@ const BenutzerDetail = ({ user }) => {
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 backgroundColor: '#F5F7FA',
+                                borderRadius: 2,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: '#E8EEF7',
+                                    '& fieldset': {
+                                        borderColor: '#4169E1'
+                                    }
+                                }
                             },
                         }}
                     />
                 </Grid>
 
                 {/* ===== ORGANISATIONEN & ROLLEN ===== */}
-                {/* Nur anzeigen, wenn Benutzer Organisationen hat */}
-                {user.organisations && user.organisations.length > 0 && (
+                {user.organisations && user.organisations.filter(org => !org.deleted).length > 0 && (
                     <>
                         <Grid item xs={12}>
                             {/* Trennlinie */}
                             <Divider sx={{ my: 2 }} />
 
                             {/* Überschrift mit Icon */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <BusinessIcon sx={{ color: '#4169E1', fontSize: 24 }} />
+                            <Box sx={{
+                                mb: 2,
+                                p: 2,
+                                borderRadius: 3,
+                                background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
+                                border: '1px solid rgba(65, 105, 225, 0.2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5
+                            }}>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                                    boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+                                }}>
+                                    <BusinessIcon sx={{ color: 'white', fontSize: 20 }} />
+                                </Box>
                                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#4169E1' }}>
                                     Organisationen & Rollen
                                 </Typography>
@@ -158,59 +224,96 @@ const BenutzerDetail = ({ user }) => {
                         </Grid>
 
                         {/* 
-                            Durch alle Organisationen iterieren
+                            Durch alle Organisationen iterieren (nur nicht-gelöschte)
                             Ein Benutzer kann mehrere Organisationen angehören,
                             und jede Organisation kann mehrere Rollen enthalten
                         */}
-                        {user.organisations.map((org, index) => (
+                        {user.organisations.filter(org => !org.deleted).map((org, index) => (
                             <React.Fragment key={index}>
                                 <Grid item xs={12}>
-                                    {/* Paper-Card für jede Organisation */}
                                     <Paper
                                         elevation={0}
                                         sx={{
-                                            p: 2,
-                                            border: '2px solid #4169E1',  // Blaue Umrandung
-                                            borderRadius: 1.5,
-                                            backgroundColor: '#F5F7FA',
-                                            transition: 'all 0.3s ease',  // Sanfte Übergänge für Hover
+                                            p: 3,
+                                            border: '2px solid rgba(65, 105, 225, 0.2)',
+                                            borderRadius: 3,
+                                            background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.04) 0%, rgba(46, 76, 184, 0.04) 100%)',
+                                            transition: 'all 0.3s ease',
                                             '&:hover': {
-                                                backgroundColor: '#E8EEF7',  // Hellere Farbe bei Hover
-                                                borderColor: '#2E4CB8',      // Dunklere Border bei Hover
+                                                background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
+                                                borderColor: '#4169E1',
+                                                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.15)',
+                                                transform: 'translateY(-2px)'
                                             },
                                         }}
                                     >
-                                        {/* Organisationsname */}
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#4169E1', mb: 1.5 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#4169E1', mb: 2, fontSize: '1.1rem' }}>
                                             {org.orgName || 'Ohne Organisation'}
                                         </Typography>
 
-                                        {/* 
-                                            Rollen als Chips (farbige Badges) anzeigen
-                                            Prüfen, ob Rollen vorhanden sind
-                                        */}
-                                        {org.roles && org.roles.length > 0 ? (
-                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                                {/* Durch alle Rollen iterieren */}
-                                                {org.roles.map((role, roleIndex) => (
-                                                    <Chip
-                                                        key={roleIndex}
-                                                        label={role.roleName}  // Rollenname anzeigen
-                                                        size="small"
-                                                        sx={{
-                                                            backgroundColor: '#4169E1',  // Royal Blue
-                                                            color: '#FFFFFF',            // Weiße Schrift
-                                                            fontWeight: 600,
-                                                        }}
-                                                    />
-                                                ))}
+                                        {/* Adressinformationen */}
+                                        {(org.street || org.hnr || org.postcode || org.city) && (
+                                            <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(255, 255, 255, 0.6)', borderRadius: 2 }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                    Adresse
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mt: 0.5, color: '#333' }}>
+                                                    {org.street} {org.hnr}<br />
+                                                    {org.postcode} {org.city}
+                                                </Typography>
                                             </Box>
-                                        ) : (
-                                            // Fallback, falls keine Rollen zugewiesen sind
-                                            <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
-                                                Keine Rollen zugewiesen
-                                            </Typography>
                                         )}
+
+                                        {/* Kontaktinformationen */}
+                                        {(org.phone || org.fax || org.email) && (
+                                            <Box sx={{ mb: 2, p: 2, backgroundColor: 'rgba(255, 255, 255, 0.6)', borderRadius: 2 }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1 }}>
+                                                    Kontakt
+                                                </Typography>
+                                                {org.phone && (
+                                                    <Typography variant="body2" sx={{ mt: 0.5, color: '#333' }}>
+                                                        📞 {org.phone}
+                                                    </Typography>
+                                                )}
+                                                {org.fax && (
+                                                    <Typography variant="body2" sx={{ color: '#333' }}>
+                                                        📠 {org.fax}
+                                                    </Typography>
+                                                )}
+                                                {org.email && (
+                                                    <Typography variant="body2" sx={{ color: '#4169E1' }}>
+                                                        ✉️ {org.email}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        )}
+
+                                        {/* Rollen */}
+                                        <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 1 }}>
+                                                Rollen
+                                            </Typography>
+                                            {org.roles && org.roles.length > 0 ? (
+                                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                    {org.roles.map((role, roleIndex) => (
+                                                        <Chip
+                                                            key={roleIndex}
+                                                            label={role.roleName}
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: '#4169E1',
+                                                                color: '#FFFFFF',
+                                                                fontWeight: 600,
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                                                    Keine Rollen zugewiesen
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </Paper>
                                 </Grid>
                             </React.Fragment>
@@ -218,8 +321,6 @@ const BenutzerDetail = ({ user }) => {
                     </>
                 )}
 
-                {/* ===== STATUS-INFORMATION ===== */}
-                {/* Nur anzeigen, wenn das 'deleted'-Feld vorhanden ist */}
                 {user.deleted !== undefined && (
                     <>
                         <Grid item xs={12}>
@@ -240,7 +341,7 @@ const BenutzerDetail = ({ user }) => {
                             */}
                             <Chip
                                 label={user.deleted ? 'Gelöscht' : 'Aktiv'}
-                                color={user.deleted ? 'error' : 'success'}  // Rot für gelöscht, Grün für aktiv
+                                color={user.deleted ? 'error' : 'success'}
                                 variant="filled"
                                 sx={{ fontWeight: 600, fontSize: 13 }}
                             />

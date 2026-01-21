@@ -1,12 +1,6 @@
 /**
  * BENUTZERFORM.JSX - Formular zum Erstellen und Bearbeiten von Benutzern
  * 
- * Diese Komponente bietet:
- * - Formular für alle Benutzerfelder (Vorname, Nachname, Email, etc.)
- * - Validierung der Eingaben
- * - Erstellen neuer Benutzer
- * - Bearbeiten bestehender Benutzer
- * - Fehlerbehandlung und Erfolgsmeldungen
  */
 
 import React, { useState, useEffect } from 'react';
@@ -68,7 +62,63 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
     // Erfolgsmeldung
     const [success, setSuccess] = useState(false);
 
+    // Liste aller verfügbaren Rollen vom Backend
+    const [availableRoles, setAvailableRoles] = useState([]);
+
+    // Liste aller verfügbaren Organisationen vom Backend
+    const [availableOrganisations, setAvailableOrganisations] = useState([]);
+
+    // Ladezustand für Rollen
+    const [rolesLoading, setRolesLoading] = useState(false);
+
     // ========== LIFECYCLE ==========
+
+    /**
+     * Rollen vom Backend laden wenn Dialog geöffnet wird
+     */
+    useEffect(() => {
+        if (open) {
+            fetchRoles();
+            fetchOrganisations();
+        }
+    }, [open]);
+
+    /**
+     * Alle verfügbaren Rollen vom Backend abrufen
+     */
+    const fetchRoles = async () => {
+        setRolesLoading(true);
+        try {
+            const roles = await userService.getRoles();
+            // API gibt uuid statt id zurück - transformieren
+            const transformedRoles = Array.isArray(roles)
+                ? roles.map(role => ({ id: role.uuid || role.id, label: role.label }))
+                : [];
+            setAvailableRoles(transformedRoles);
+        } catch (err) {
+            console.error('Fehler beim Laden der Rollen:', err);
+            setAvailableRoles([]);
+        } finally {
+            setRolesLoading(false);
+        }
+    };
+
+    /**
+     * Alle verfügbaren Organisationen vom Backend abrufen
+     */
+    const fetchOrganisations = async () => {
+        try {
+            const orgs = await userService.getOrganisations();
+            // API gibt uuid statt id zurück - transformieren
+            const transformedOrgs = Array.isArray(orgs)
+                ? orgs.map(org => ({ id: org.uuid || org.id, label: org.label }))
+                : [];
+            setAvailableOrganisations(transformedOrgs);
+        } catch (err) {
+            console.error('Fehler beim Laden der Organisationen:', err);
+            setAvailableOrganisations([]);
+        }
+    };
 
     /**
      * Wenn editUser sich ändert, Formular mit Benutzerdaten befüllen
@@ -83,9 +133,9 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
             setFormData({
                 userUid: editUser.userUid || '',
                 username: editUser.username || '',
-                firstname: editUser.firstname || editUser.firstName || '',
-                lastname: editUser.lastname || editUser.lastName || '',
-                mail: editUser.mail || editUser.email || '',
+                firstname: editUser.firstName || '',
+                lastname: editUser.lastName || '',
+                mail: editUser.mail || '',
                 phone: editUser.phone || '',
                 organisation: firstOrg?.orgName || '',
                 role: firstOrg?.roles && firstOrg.roles.length > 0 ? firstOrg.roles[0].roleName : ''
@@ -228,40 +278,93 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
             maxWidth="md"
             fullWidth
             PaperProps={{
-                sx: { borderRadius: 2 }
+                sx: {
+                    borderRadius: 4,
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)',
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%)'
+                }
+            }}
+            sx={{
+                '& .MuiBackdrop-root': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    backdropFilter: 'blur(4px)'
+                }
             }}
         >
             {/* Dialog-Titel */}
             <DialogTitle sx={{
-                backgroundColor: '#4169E1',
+                background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
                 color: 'white',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1,
-                fontSize: '1.25rem'
+                gap: 2,
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                py: 3,
+                px: 4,
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 20px rgba(65, 105, 225, 0.3)'
             }}>
-                <PersonIcon />
-                {editUser ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    backdropFilter: 'blur(10px)'
+                }}>
+                    <PersonIcon sx={{ fontSize: 28 }} />
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '0.5px' }}>
+                    {editUser ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}
+                </Typography>
             </DialogTitle>
 
             {/* Dialog-Inhalt */}
-            <DialogContent sx={{ mt: 2 }}>
+            <DialogContent sx={{ p: 4, mt: 1 }}>
                 {/* Erfolgsmeldung */}
                 {success && (
-                    <Alert severity="success" sx={{ mb: 2 }}>
+                    <Alert
+                        severity="success"
+                        sx={{
+                            mb: 3,
+                            borderRadius: 2,
+                            boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)',
+                            animation: 'slideIn 0.3s ease-out',
+                            '@keyframes slideIn': {
+                                from: { opacity: 0, transform: 'translateY(-10px)' },
+                                to: { opacity: 1, transform: 'translateY(0)' }
+                            }
+                        }}
+                    >
                         Benutzer wurde erfolgreich gespeichert!
                     </Alert>
                 )}
 
                 {/* Fehlermeldung */}
                 {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
+                    <Alert
+                        severity="error"
+                        sx={{
+                            mb: 3,
+                            borderRadius: 2,
+                            boxShadow: '0 4px 12px rgba(244, 67, 54, 0.2)',
+                            animation: 'slideIn 0.3s ease-out',
+                            '@keyframes slideIn': {
+                                from: { opacity: 0, transform: 'translateY(-10px)' },
+                                to: { opacity: 1, transform: 'translateY(0)' }
+                            }
+                        }}
+                    >
                         {error}
                     </Alert>
                 )}
 
                 {/* Formular-Grid */}
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{ mt: 0.5 }}>
                     {/* Benutzername */}
                     <Grid item xs={12}>
                         <TextField
@@ -273,20 +376,69 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             onChange={handleChange}
                             error={!!errors.username}
                             helperText={errors.username}
-                            disabled={loading || !!editUser} // Beim Bearbeiten nicht änderbar
+                            disabled={loading || !!editUser}
                             InputProps={{
                                 startAdornment: (
-                                    <Typography sx={{ mr: 1, color: '#999' }}>@</Typography>
+                                    <Typography sx={{ mr: 1, color: '#4169E1', fontWeight: 600 }}>@</Typography>
                                 )
+                            }}
+                            InputLabelProps={{
+                                sx: {
+                                    '&.MuiInputLabel-shrink': {
+                                        transform: 'translate(14px, -9px) scale(0.75)',
+                                    }
+                                }
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                },
+                                '& .MuiInputLabel-root': {
+                                    backgroundColor: 'white',
+                                    paddingX: 0.5
+                                }
                             }}
                         />
                     </Grid>
 
                     <Grid item xs={12}>
-                        <Divider sx={{ my: 1 }} />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <PersonIcon sx={{ color: '#4169E1', fontSize: 20 }} />
-                            <Typography variant="subtitle2" sx={{ color: '#4169E1', fontWeight: 600 }}>
+                        <Box sx={{
+                            mt: 2,
+                            mb: 2,
+                            p: 2,
+                            borderRadius: 3,
+                            background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
+                            border: '1px solid rgba(65, 105, 225, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 36,
+                                height: 36,
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+                            }}>
+                                <PersonIcon sx={{ color: 'white', fontSize: 20 }} />
+                            </Box>
+                            <Typography variant="subtitle1" sx={{ color: '#4169E1', fontWeight: 700, letterSpacing: '0.5px' }}>
                                 Persönliche Daten
                             </Typography>
                         </Box>
@@ -304,6 +456,24 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             error={!!errors.firstname}
                             helperText={errors.firstname}
                             disabled={loading}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                }
+                            }}
                         />
                     </Grid>
 
@@ -319,14 +489,52 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             error={!!errors.lastname}
                             helperText={errors.lastname}
                             disabled={loading}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                }
+                            }}
                         />
                     </Grid>
 
                     <Grid item xs={12}>
-                        <Divider sx={{ my: 1 }} />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <EmailIcon sx={{ color: '#4169E1', fontSize: 20 }} />
-                            <Typography variant="subtitle2" sx={{ color: '#4169E1', fontWeight: 600 }}>
+                        <Box sx={{
+                            mt: 2,
+                            mb: 2,
+                            p: 2,
+                            borderRadius: 3,
+                            background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
+                            border: '1px solid rgba(65, 105, 225, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 36,
+                                height: 36,
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+                            }}>
+                                <EmailIcon sx={{ color: 'white', fontSize: 20 }} />
+                            </Box>
+                            <Typography variant="subtitle1" sx={{ color: '#4169E1', fontWeight: 700, letterSpacing: '0.5px' }}>
                                 Kontaktdaten
                             </Typography>
                         </Box>
@@ -347,8 +555,26 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             disabled={loading}
                             InputProps={{
                                 startAdornment: (
-                                    <EmailIcon sx={{ mr: 1, color: '#999', fontSize: 20 }} />
+                                    <EmailIcon sx={{ mr: 1, color: '#4169E1', fontSize: 20 }} />
                                 )
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                }
                             }}
                         />
                     </Grid>
@@ -364,17 +590,55 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             disabled={loading}
                             InputProps={{
                                 startAdornment: (
-                                    <PhoneIcon sx={{ mr: 1, color: '#999', fontSize: 20 }} />
+                                    <PhoneIcon sx={{ mr: 1, color: '#4169E1', fontSize: 20 }} />
                                 )
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                }
                             }}
                         />
                     </Grid>
 
                     <Grid item xs={12}>
-                        <Divider sx={{ my: 1 }} />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <BusinessIcon sx={{ color: '#4169E1', fontSize: 20 }} />
-                            <Typography variant="subtitle2" sx={{ color: '#4169E1', fontWeight: 600 }}>
+                        <Box sx={{
+                            mt: 2,
+                            mb: 2,
+                            p: 2,
+                            borderRadius: 3,
+                            background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
+                            border: '1px solid rgba(65, 105, 225, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5
+                        }}>
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: 36,
+                                height: 36,
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+                            }}>
+                                <BusinessIcon sx={{ color: 'white', fontSize: 20 }} />
+                            </Box>
+                            <Typography variant="subtitle1" sx={{ color: '#4169E1', fontWeight: 700, letterSpacing: '0.5px' }}>
                                 Organisation & Rolle
                             </Typography>
                         </Box>
@@ -395,16 +659,34 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             }}
                             InputProps={{
                                 startAdornment: (
-                                    <BusinessIcon sx={{ mr: 1, color: '#999', fontSize: 20 }} />
+                                    <BusinessIcon sx={{ mr: 1, color: '#4169E1', fontSize: 20 }} />
                                 )
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                }
                             }}
                         >
                             <option value="">-- Bitte wählen --</option>
-                            <option value="IT.NRW">IT.NRW</option>
-                            <option value="Land NRW Fachbereich 1">Land NRW Fachbereich 1</option>
-                            <option value="Stadt Musterstadt">Stadt Musterstadt</option>
-                            <option value="Private Geo Firma GmbH">Private Geo Firma GmbH</option>
-                            <option value="Test Unternehmen GmbH">Test Unternehmen GmbH</option>
+                            {availableOrganisations.map((org, index) => (
+                                <option key={org.id || `org-${index}`} value={org.label}>
+                                    {org.label}
+                                </option>
+                            ))}
                         </TextField>
                     </Grid>
 
@@ -417,32 +699,70 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                             label="Rolle"
                             value={formData.role}
                             onChange={handleChange}
-                            disabled={loading}
+                            disabled={loading || rolesLoading}
                             SelectProps={{
                                 native: true,
                             }}
                             InputProps={{
                                 startAdornment: (
-                                    <BadgeIcon sx={{ mr: 1, color: '#999', fontSize: 20 }} />
+                                    <BadgeIcon sx={{ mr: 1, color: '#4169E1', fontSize: 20 }} />
                                 )
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover:not(.Mui-disabled)': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            borderWidth: 2
+                                        }
+                                    },
+                                    '&.Mui-focused': {
+                                        '& fieldset': {
+                                            borderColor: '#4169E1',
+                                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)'
+                                        }
+                                    }
+                                }
                             }}
                         >
                             <option value="">-- Bitte wählen --</option>
-                            <option value="ADMIN">Admin</option>
-                            <option value="USER">User</option>
-                            <option value="VIEWER">Viewer</option>
+                            {availableRoles.map((role, index) => (
+                                <option key={role.id || `role-${index}`} value={role.label}>
+                                    {role.label}
+                                </option>
+                            ))}
                         </TextField>
                     </Grid>
                 </Grid>
             </DialogContent>
 
             {/* Dialog-Aktionen */}
-            <DialogActions sx={{ px: 3, pb: 2 }}>
+            <DialogActions sx={{
+                px: 4,
+                pb: 3,
+                pt: 2,
+                gap: 2,
+                background: 'linear-gradient(to bottom, transparent 0%, rgba(248, 249, 250, 0.5) 100%)',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)'
+            }}>
                 <Button
                     onClick={handleClose}
                     disabled={loading}
                     startIcon={<CloseIcon />}
-                    sx={{ color: '#666' }}
+                    sx={{
+                        color: '#666',
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                            transform: 'translateY(-2px)'
+                        }
+                    }}
                 >
                     Abbrechen
                 </Button>
@@ -450,7 +770,25 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                     onClick={handleSubmit}
                     variant="contained"
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+                    startIcon={loading ? <CircularProgress size={20} sx={{ color: 'white' }} /> : <SaveIcon />}
+                    sx={{
+                        px: 4,
+                        py: 1.5,
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                        boxShadow: '0 4px 15px rgba(65, 105, 225, 0.4)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            background: 'linear-gradient(135deg, #2E4CB8 0%, #1e3a8a 100%)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 6px 20px rgba(65, 105, 225, 0.5)'
+                        },
+                        '&:disabled': {
+                            background: 'linear-gradient(135deg, #ccc 0%, #999 100%)',
+                            boxShadow: 'none'
+                        }
+                    }}
                 >
                     {loading ? 'Wird gespeichert...' : 'Speichern'}
                 </Button>

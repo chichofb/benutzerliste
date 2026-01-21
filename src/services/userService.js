@@ -36,16 +36,76 @@ const userService = {
      * @param {Object} searchParams - Optional: Filter-Parameter für die Suche
      * @returns {Promise} Promise mit Benutzerdaten vom Server
      */
-    getUsers: async (searchParams = {}) => {
+    getUsers: async (/*searchParams = {}*/) => {
         try {
             // GET-Request an /api/users mit optionalen Query-Parametern
             const response = await axiosInstance.get('/users', {
-                params: searchParams  // z.B. ?name=Max&organisation=IT
+                // params: searchParams  // z.B. ?name=Max&organisation=IT
             });
             return response.data;  // Gibt die Benutzerliste zurück
         } catch (error) {
             console.error('Fehler beim Abrufen der Benutzer:', error);
             throw error;  // Fehler wird an aufrufende Komponente weitergegeben
+        }
+    },
+
+    /**
+    * Alle verfügbaren Rollen abrufen
+    * @returns {Promise} Promise mit Liste aller Rollen
+    */
+    getRoles: async () => {
+        try {
+            // GET-Request an /api/roles/select
+            const response = await axiosInstance.get('/roles/select');
+            return response.data.options || [];  // API gibt { options: [...] } zurück
+        } catch (error) {
+            console.error('Fehler beim Abrufen der Rollen:', error);
+            throw error;
+        }
+    },
+
+    /**
+    * Alle verfügbaren Organisationen abrufen
+    * @returns {Promise} Promise mit Liste aller Organisationen
+    */
+    getOrganisations: async () => {
+        try {
+            // GET-Request an /api/organisations/select
+            const response = await axiosInstance.get('/organisations/select');
+            return response.data.options || [];  // API gibt { options: [{id, label}] } zurück
+        } catch (error) {
+            console.error('Fehler beim Abrufen der Organisationen:', error);
+            throw error;
+        }
+    },
+
+    /**
+    * Alle verfügbaren Organisationstypen abrufen (z.B. Gemeinde, Stadt, etc.)
+    * @returns {Promise} Promise mit Liste aller Organisationstypen
+    */
+    getOrganisationLevelTypes: async () => {
+        try {
+            // GET-Request an /api/organisations/leveltypes/select
+            const response = await axiosInstance.get('/organisations/leveltypes/select');
+            return response.data.options || [];  // API gibt { options: [{id, label}] } zurück
+        } catch (error) {
+            console.error('Fehler beim Abrufen der Organisationstypen:', error);
+            throw error;
+        }
+    },
+
+    /**
+    * Alle verfügbaren Organisationsebenen abrufen (z.B. Aachen, Köln, etc.)
+    * @returns {Promise} Promise mit Liste aller Organisationsebenen
+    */
+    getOrganisationLevels: async () => {
+        try {
+            // GET-Request an /api/organisations/level/select
+            const response = await axiosInstance.get('/organisations/level/select');
+            return response.data.options || [];  // API gibt { options: [{id, label}] } zurück
+        } catch (error) {
+            console.error('Fehler beim Abrufen der Organisationsebenen:', error);
+            throw error;
         }
     },
 
@@ -117,6 +177,8 @@ const userService = {
             throw error;
         }
     }
+
+
 };
 
 export default userService;

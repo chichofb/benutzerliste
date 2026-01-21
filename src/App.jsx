@@ -17,96 +17,140 @@ import Benutzerliste from './components/Benutzerliste'
  * Definiert das komplette Erscheinungsbild der Anwendung
  */
 const theme = createTheme({
-    // Farbpalette der Anwendung
     palette: {
         primary: {
-            main: '#4169E1',    // Royal Blue - Hauptfarbe der Anwendung
-            light: '#6A8FE1',   // Hellere Variante für Hover-Effekte
-            dark: '#2E4CB8',    // Dunklere Variante für aktive Zustände
+            main: '#4169E1',
+            light: '#6A8FE1',
+            dark: '#2E4CB8',
         },
         secondary: {
-            main: '#00BCD4',    // Cyan - Sekundärfarbe für Akzente
-            light: '#4DD0E1',   // Helle Variante
+            main: '#00BCD4',
+            light: '#4DD0E1',
         },
         background: {
-            default: '#F5F7FA', // Hintergrundfarbe der gesamten Seite
-            paper: '#FFFFFF',   // Hintergrund für Cards und Paper-Komponenten
+            default: '#F5F7FA',
+            paper: '#FFFFFF',
         },
         success: {
-            main: '#4CAF50',    // Grün für Erfolgsm eldungen
+            main: '#4CAF50',
         },
         error: {
-            main: '#F44336',    // Rot für Fehlermeldungen und Lösch-Aktionen
+            main: '#F44336',
         },
     },
-    // Typografie-Einstellungen
     typography: {
-        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',  // Standard-Schriftart
+        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
         h1: {
-            fontWeight: 600,           // Fettgedruckt für Überschriften
-            letterSpacing: '-0.5px',   // Leicht engerer Buchstabenabstand
+            fontWeight: 600,
+            letterSpacing: '-0.5px',
         },
         h3: {
-            fontWeight: 600,           // Fettgedruckt
+            fontWeight: 600,
         },
         button: {
-            textTransform: 'none',     // WICHTIG: Buttons ohne Großbuchstaben
-            fontWeight: 500,           // Mittlere Schriftstärke
+            textTransform: 'none',
+            fontWeight: 500,
         },
     },
-    // Grundlegende Formgestaltung
     shape: {
-        borderRadius: 8,  // Standard-Abrundung für alle Komponenten (8px)
+        borderRadius: 12,
     },
     /**
      * Komponentenspezifische Style-Überschreibungen
      * Hier werden Standard-Styles von Material-UI-Komponenten angepasst
      */
     components: {
-        // AppBar (Kopfzeile) Styling
+
         MuiAppBar: {
             styleOverrides: {
                 root: {
-                    // Weicher Schatten für die Kopfzeile
-                    boxShadow: '0 2px 8px rgba(65, 105, 225, 0.15)',
+                    boxShadow: '0 4px 20px rgba(65, 105, 225, 0.25)',
+                    backdropFilter: 'blur(10px)',
                 },
             },
         },
-        // Button Styling
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: 6,           // Abgerundete Ecken
-                    textTransform: 'none',     // Normaler Text (nicht GROSSBUCHSTABEN)
-                    fontWeight: 500,           // Mittlere Schriftstärke
-                    padding: '8px 16px',       // Innenabstand
+                    borderRadius: 8,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    padding: '10px 20px',
+                    transition: 'all 0.3s ease',
                 },
                 contained: {
-                    // Schatten für gefüllte Buttons
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)',
+                    '&:hover': {
+                        boxShadow: '0 6px 16px rgba(65, 105, 225, 0.4)',
+                        transform: 'translateY(-2px)',
+                    },
+                },
+                outlined: {
+                    borderWidth: '2px',
+                    '&:hover': {
+                        borderWidth: '2px',
+                        transform: 'translateY(-2px)',
+                    },
                 },
             },
         },
-        // Card-Komponenten Styling
         MuiCard: {
             styleOverrides: {
                 root: {
-                    // Dezenter Schatten für Cards
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                    borderRadius: 12,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
+                    },
                 },
             },
         },
-        // Tabellenkopf Styling
+        MuiTextField: {
+            styleOverrides: {
+                root: {
+                    '& .MuiOutlinedInput-root': {
+                        borderRadius: 8,
+                        transition: 'all 0.3s ease',
+                        '&:hover:not(.Mui-disabled) .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4169E1',
+                            borderWidth: 2,
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#4169E1',
+                            boxShadow: '0 0 0 4px rgba(65, 105, 225, 0.1)',
+                        },
+                    },
+                },
+            },
+        },
         MuiTableHead: {
             styleOverrides: {
                 root: {
                     backgroundColor: '#F5F7FA',
-                    // Styling für Tabellenkopf-Zellen
                     '& .MuiTableCell-head': {
-                        backgroundColor: '#4169E1',  // Royal Blue Hintergrund
-                        color: '#FFFFFF',            // Weiße Schrift
-                        fontWeight: 600,             // Fettgedruckt
+                        backgroundColor: '#4169E1',
+                        color: '#FFFFFF',
+                        fontWeight: 600,
                     },
+                },
+            },
+        },
+
+        MuiDialog: {
+            styleOverrides: {
+                paper: {
+                    borderRadius: 16,
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                },
+            },
+        },
+
+        MuiChip: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 8,
+                    fontWeight: 600,
                 },
             },
         },
@@ -114,36 +158,65 @@ const theme = createTheme({
 })
 
 /**
- * App-Hauptkomponente
  * Rendert das komplette Layout der Anwendung
  */
 function App() {
     return (
         <ThemeProvider theme={theme}>
-            {/* CssBaseline: Normalisiert CSS über verschiedene Browser */}
             <CssBaseline />
 
-            {/* Hauptcontainer: Flexbox-Layout für Kopfzeile und Inhalt */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100vh',
+                background: 'linear-gradient(to bottom, #F5F7FA 0%, #E8EEF7 100%)'
+            }}>
 
-                {/* AppBar: Sticky Kopfzeile mit Gradient-Hintergrund */}
-                <AppBar position="sticky" sx={{ background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)' }}>
-                    <Toolbar>
-                        {/* Icon: Menschen-Symbol für Benutzerverwaltung */}
-                        <PeopleIcon sx={{ mr: 2, fontSize: 28 }} />
+                <AppBar
+                    position="sticky"
+                    sx={{
+                        background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                >
+                    <Toolbar sx={{ py: 1 }}>
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 48,
+                            height: 48,
+                            borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(10px)',
+                            mr: 2,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.25)',
+                                transform: 'scale(1.05)'
+                            }
+                        }}>
+                            <PeopleIcon sx={{ fontSize: 28, color: 'white' }} />
+                        </Box>
 
-                        {/* Titel der Anwendung */}
-                        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: '0.5px' }}>
+                        <Typography
+                            variant="h6"
+                            component="div"
+                            sx={{
+                                flexGrow: 1,
+                                fontWeight: 700,
+                                letterSpacing: '0.5px',
+                                fontSize: '1.25rem'
+                            }}
+                        >
                             Benutzerverwaltung
                         </Typography>
                     </Toolbar>
                 </AppBar>
 
-                {/* Hauptinhalt-Container: Extra breit (xl) mit Padding */}
-                <Container maxWidth="xl" sx={{ flex: 1, py: 4 }}>
-                    {/* Benutzerliste-Komponente: Zeigt die Tabelle mit allen Benutzern */}
+                <Box sx={{ flex: 1, width: '100%', height: '100%' }}>
                     <Benutzerliste />
-                </Container>
+                </Box>
             </Box>
         </ThemeProvider>
     )

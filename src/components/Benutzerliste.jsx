@@ -37,12 +37,15 @@ import {
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Search as SearchIcon, Close as CloseIcon, Add as AddIcon } from '@mui/icons-material';
 import userService from '../services/userService';
 import BenutzerDetail from './BenutzerDetail';
-import BenutzerForm from './BenutzerForm';
+import BenutzerFormStepper from './BenutzerFormStepper';
 
 const Benutzerliste = () => {
     // ========== STATE-VERWALTUNG ==========
 
-    // Benutzerdaten aus dem Backend
+    // Vollständige Benutzerliste (ungefiltert)
+    const [allUsers, setAllUsers] = useState([]);
+
+    // Gefilterte Benutzerdaten für Anzeige
     const [users, setUsers] = useState([]);
 
     // Ladezustand während API-Anfragen
@@ -72,22 +75,28 @@ const Benutzerliste = () => {
     // Liste aller verfügbaren Organisationen (für Filter-Dropdown)
     const [organisations, setOrganisations] = useState([]);
 
+    // Liste aller verfügbaren Rollen (für Filter-Dropdown)
+    const [availableRoles, setAvailableRoles] = useState([]);
+
+    // Ausgewählte Rolle für Filterung
+    const [roleFilter, setRoleFilter] = useState('');
+
     // Status des Formular-Dialogs (offen/geschlossen)
     const [formOpen, setFormOpen] = useState(false);
 
     // Benutzer für Bearbeitung (null = neuer Benutzer erstellen)
     const [editingUser, setEditingUser] = useState(null);
 
-    // ========== LIFECYCLE & INITIALISIERUNG ==========
-
     /**
      * useEffect: Wird beim ersten Laden der Komponente ausgeführt
      * - Lädt alle Benutzer vom Backend
-     * - Extrahiert die verfügbaren Organisationen
+     * - Lädt alle verfügbaren Organisationen
+     * - Lädt alle verfügbaren Rollen
      */
     useEffect(() => {
         fetchUsers();              // Benutzer vom Backend laden
-        extractOrganisations();    // Organisationen aus Benutzern extrahieren
+        fetchOrganisations();      // Organisationen vom Backend laden
+        fetchRoles();              // Alle verfügbaren Rollen laden
     }, []); // Leeres Array [] bedeutet: nur einmal beim Komponentenstart ausführen
 
     // ========== API-KOMMUNIKATION ==========
@@ -104,8 +113,8 @@ const Benutzerliste = () => {
      * 5. Extrahiert die Organisationen für den Filter
      */
     const fetchUsers = async (params = {}) => {
-        setLoading(true);   // Ladeanimation anzeigen
-        setError(null);     // Vorherige Fehler löschen
+        setLoading(true);
+        setError(null);
 
         try {
             // API-Aufruf über userService
@@ -113,82 +122,60 @@ const Benutzerliste = () => {
             console.log('API Response:', response);
 
             // ===== Verschiedene API-Antwortformate verarbeiten =====
-            // Das Backend kann Daten in verschiedenen Formaten zurückgeben:
             let userList = [];
 
-            // Format 1: HAL-Format (Spring Data REST Standard)
             if (response._embedded && response._embedded.users) {
                 userList = response._embedded.users;
             }
-            // Format 2: Direktes Array
             else if (Array.isArray(response)) {
                 userList = response;
             }
-            // Format 3: Paginated Response mit 'content'-Array
             else if (response.content && Array.isArray(response.content)) {
                 userList = response.content;
             }
 
             console.log('Extracted users:', userList);
-            // Sicherstellen, dass wir ein Array haben
-            setUsers(Array.isArray(userList) ? userList : []);
-
-            // ===== Organisationen extrahieren =====
-            // Nach dem Laden der Benutzer alle einzigartigen Organisationen sammeln
-            if (Array.isArray(userList) && userList.length > 0) {
-                const orgSet = new Set();  // Set verhindert Duplikate
-
-                userList.forEach(user => {
-                    // Jeder Benutzer kann mehrere Organisationen haben
-                    if (user.organisations && Array.isArray(user.organisations)) {
-                        user.organisations.forEach(org => {
-                            if (org.orgName) {
-                                orgSet.add(org.orgName);  // Organisation hinzufügen
-                            }
-                        });
-                    }
-                });
-
-                // Set in Array umwandeln und alphabetisch sortieren
-                setOrganisations(Array.from(orgSet).sort());
-            }
+            const userArray = Array.isArray(userList) ? userList : [];
+            setAllUsers(userArray);  // Vollständige Liste speichern
+            setUsers(userArray);      // Gefilterte Liste initial gleich
         } catch (err) {
-            // Fehlerbehandlung
             setError('Fehler beim Laden der Benutzer');
             console.error('Error details:', err.response?.data || err.message);
         } finally {
-            // Ladezustand beenden (egal ob Erfolg oder Fehler)
             setLoading(false);
         }
     };
 
     /**
-     * Organisationen aus geladenen Benutzern extrahieren
-     * 
-     * Diese Hilfsfunktion wird nach dem Laden der Benutzer aufgerufen,
-     * um alle einzigartigen Organisationen zu sammeln.
-     * 
-     * Hinweis: setTimeout mit 0ms stellt sicher, dass die Benutzer
-     * bereits im State sind, bevor wir sie verarbeiten.
+     * Alle verfügbaren Organisationen vom Backend laden
      */
-    const extractOrganisations = () => {
-        setTimeout(() => {
-            const orgSet = new Set();  // Set für einzigartige Werte
+    const fetchOrganisations = async () => {
+        try {
+            const orgs = await userService.getOrganisations();
+            // API gibt [{uuid, label}] zurück, wir brauchen nur die Labels für Filter
+            const orgLabels = Array.isArray(orgs) ? orgs.map(org => org.label) : [];
+            setOrganisations(orgLabels.sort());
+        } catch (err) {
+            console.error('Fehler beim Laden der Organisationen:', err);
+            setOrganisations([]);
+        }
+    };
 
-            users.forEach(user => {
-                // Durch alle Organisationen des Benutzers iterieren
-                if (user.organisations && Array.isArray(user.organisations)) {
-                    user.organisations.forEach(org => {
-                        if (org.orgName) {
-                            orgSet.add(org.orgName);  // Zur Liste hinzufügen
-                        }
-                    });
-                }
-            });
-
-            // Als sortiertes Array speichern
-            setOrganisations(Array.from(orgSet).sort());
-        }, 0);
+    /**
+     * Alle verfügbaren Rollen vom Backend laden
+     */
+    const fetchRoles = async () => {
+        try {
+            const roles = await userService.getRoles();
+            // API gibt uuid statt id zurück - transformieren
+            const transformedRoles = Array.isArray(roles)
+                ? roles.map(role => ({ id: role.uuid || role.id, label: role.label }))
+                : [];
+            setAvailableRoles(transformedRoles);
+        } catch (err) {
+            console.error('Fehler beim Laden der Rollen:', err);
+            setAvailableRoles([]);
+        }
     };
 
     // ========== SUCH- UND FILTER-FUNKTIONEN ==========
@@ -197,13 +184,12 @@ const Benutzerliste = () => {
      * Handler für Name/Email/Benutzername-Suche
      * @param {Event} e - Input-Change-Event
      * 
-     * Wird bei jeder Eingabe im Suchfeld aufgerufen und
-     * wendet die Filter auf die Benutzerliste an.
+     * Wird bei jeder Eingabe im Suchfeld aufgerufen
      */
     const handleNameSearch = (e) => {
         const value = e.target.value;
-        setSearchTerm(value);                          // Suchbegriff speichern
-        applyFilters(value, organisationFilter);       // Filter anwenden
+        setSearchTerm(value);
+        applyFilters(value, organisationFilter, roleFilter);
     };
 
     /**
@@ -214,33 +200,44 @@ const Benutzerliste = () => {
      */
     const handleOrganisationFilter = (e) => {
         const value = e.target.value;
-        setOrganisationFilter(value);          // Ausgewählte Organisation speichern
-        applyFilters(searchTerm, value);       // Filter anwenden
+        setOrganisationFilter(value);
+        applyFilters(searchTerm, value, roleFilter);
     };
 
     /**
-     * Beide Filter gleichzeitig anwenden
+     * Handler für Rollen-Filter
+     * @param {Event} e - Select-Change-Event
+     * 
+     * Wird aufgerufen, wenn eine Rolle im Dropdown ausgewählt wird.
+     */
+    const handleRoleFilter = (e) => {
+        const value = e.target.value;
+        setRoleFilter(value);
+        applyFilters(searchTerm, organisationFilter, value);
+    };
+
+    /**
+     * Alle Filter gleichzeitig anwenden
      * @param {string} nameFilter - Suchbegriff für Name/Email/Username
      * @param {string} orgFilter - Ausgewählte Organisation
+     * @param {string} roleFilterValue - Ausgewählte Rolle
      * 
-     * Diese Funktion kombiniert beide Filter:
+     * Diese Funktion kombiniert alle Filter:
      * 1. Suche nach Name/Email/Username (Case-insensitive)
      * 2. Filterung nach Organisation
+     * 3. Filterung nach Rolle
      * 
      * WICHTIG: Filter werden CLIENT-SEITIG angewendet!
-     * Das bedeutet, die Filterung findet im Browser statt,
-     * nicht auf dem Server. Bei großen Datenmengen könnte
-     * eine Server-seitige Filterung effizienter sein.
      */
-    const applyFilters = (nameFilter, orgFilter) => {
-        // Wenn keine Filter aktiv sind, alle Benutzer neu laden
-        if (!nameFilter && !orgFilter) {
-            fetchUsers();
+    const applyFilters = (nameFilter, orgFilter, roleFilterValue) => {
+        // Wenn keine Filter aktiv sind, vollständige Liste anzeigen
+        if (!nameFilter && !orgFilter && !roleFilterValue) {
+            setUsers(allUsers);
             return;
         }
 
-        // Kopie der Benutzerliste für Filterung
-        let filtered = users;
+        // WICHTIG: Immer auf der vollständigen Liste filtern!
+        let filtered = allUsers;
 
         // ===== Name/Email/Username-Filter =====
         if (nameFilter) {
@@ -248,8 +245,8 @@ const Benutzerliste = () => {
 
             filtered = filtered.filter(user =>
                 // Suche in verschiedenen Feldern (Vorname, Nachname, Username, Email)
-                (user.firstname && user.firstname.toLowerCase().includes(searchLower)) ||
-                (user.lastname && user.lastname.toLowerCase().includes(searchLower)) ||
+                (user.firstName && user.firstName.toLowerCase().includes(searchLower)) ||
+                (user.lastName && user.lastName.toLowerCase().includes(searchLower)) ||
                 (user.username && user.username.toLowerCase().includes(searchLower)) ||
                 (user.mail && user.mail.toLowerCase().includes(searchLower))
             );
@@ -258,13 +255,21 @@ const Benutzerliste = () => {
         // ===== Organisations-Filter =====
         if (orgFilter) {
             filtered = filtered.filter(user =>
-                // Prüfen, ob Benutzer zur ausgewählten Organisation gehört
                 user.organisations &&
-                user.organisations.some(org => org.orgName === orgFilter)
+                user.organisations.some(org => !org.deleted && org.orgName === orgFilter)
             );
         }
 
-        // Gefilterte Liste im State speichern
+        // ===== Rollen-Filter =====
+        if (roleFilterValue) {
+            filtered = filtered.filter(user =>
+                user.organisations &&
+                user.organisations.some(org =>
+                    !org.deleted && org.roles && org.roles.some(role => role.roleName === roleFilterValue)
+                )
+            );
+        }
+
         setUsers(filtered);
     };
 
@@ -281,17 +286,13 @@ const Benutzerliste = () => {
      */
     const handleViewDetails = async (userId) => {
         try {
-            // Vollständige Benutzerdaten vom Backend abrufen
             const response = await userService.getUserById(userId);
 
-            // HAL-Format auspacken, falls nötig
             const userData = response.content || response;
 
-            // Benutzer speichern und Modal öffnen
             setSelectedUser(userData);
             setDetailOpen(true);
         } catch (err) {
-            // Fehlerbehandlung
             setError('Fehler beim Laden der Benutzerdetails');
         }
     };
@@ -300,8 +301,8 @@ const Benutzerliste = () => {
      * Detail-Modal schließen und State zurücksetzen
      */
     const handleCloseDetail = () => {
-        setDetailOpen(false);      // Modal schließen
-        setSelectedUser(null);     // Ausgewählten Benutzer zurücksetzen
+        setDetailOpen(false);
+        setSelectedUser(null);
     };
 
     // ========== LÖSCH-FUNKTIONEN ==========
@@ -314,16 +315,16 @@ const Benutzerliste = () => {
      * tatsächlich gelöscht wird (Best Practice: Sicherheitsabfrage)
      */
     const handleOpenDeleteDialog = (userId) => {
-        setDeleteTargetId(userId);      // Benutzer-ID speichern
-        setDeleteDialogOpen(true);      // Bestätigungsdialog öffnen
+        setDeleteTargetId(userId);
+        setDeleteDialogOpen(true);
     };
 
     /**
      * Lösch-Bestätigungsdialog schließen ohne zu löschen
      */
     const handleCloseDeleteDialog = () => {
-        setDeleteDialogOpen(false);  // Dialog schließen
-        setDeleteTargetId(null);     // ID zurücksetzen
+        setDeleteDialogOpen(false);
+        setDeleteTargetId(null);
     };
 
     /**
@@ -340,16 +341,12 @@ const Benutzerliste = () => {
             // API-Aufruf zum Löschen
             await userService.deleteUser(deleteTargetId);
 
-            // Benutzer aus der lokalen Liste entfernen (sofortiges UI-Update)
             setUsers(users.filter(user => user.userUid !== deleteTargetId));
 
-            // Dialog schließen
             handleCloseDeleteDialog();
 
-            // Vorherige Fehler löschen
             setError(null);
         } catch (err) {
-            // Fehlerbehandlung
             setError('Fehler beim Löschen des Benutzers');
             console.error(err);
         }
@@ -361,8 +358,8 @@ const Benutzerliste = () => {
      * Formular zum Erstellen eines neuen Benutzers öffnen
      */
     const handleOpenCreateForm = () => {
-        setEditingUser(null);  // Kein Benutzer = Create-Modus
-        setFormOpen(true);     // Formular öffnen
+        setEditingUser(null);
+        setFormOpen(true);
     };
 
     /**
@@ -370,23 +367,23 @@ const Benutzerliste = () => {
      * @param {Object} user - Zu bearbeitender Benutzer
      */
     const handleOpenEditForm = (user) => {
-        setEditingUser(user);  // Benutzer setzen = Edit-Modus
-        setFormOpen(true);     // Formular öffnen
+        setEditingUser(user);
+        setFormOpen(true);
     };
 
     /**
      * Formular schließen und State zurücksetzen
      */
     const handleCloseForm = () => {
-        setFormOpen(false);    // Formular schließen
-        setEditingUser(null);  // Benutzer zurücksetzen
+        setFormOpen(false);
+        setEditingUser(null);
     };
 
     /**
      * Nach erfolgreichem Speichern: Benutzerliste neu laden
      */
     const handleFormSuccess = () => {
-        fetchUsers();  // Benutzerliste neu laden
+        fetchUsers();
         handleCloseForm();
     };
 
@@ -395,11 +392,17 @@ const Benutzerliste = () => {
     }
 
     return (
-        <>
+        <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: 'calc(100vh - 64px)',
+            width: '100%',
+            overflow: 'hidden'
+        }}>
             {/* Filter Card mit "Neuer Benutzer"-Button */}
-            <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+            <Box sx={{ mb: 2, mx: 2, mt: 2, display: 'flex', gap: 2, alignItems: 'flex-start', flexShrink: 0 }}>
                 <Card sx={{ flex: 1, p: 3, background: 'linear-gradient(135deg, #F5F7FA 0%, #FFFFFF 100%)', borderLeft: '4px solid #4169E1' }}>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
                         <TextField
                             fullWidth
                             label="Benutzer suchen"
@@ -463,10 +466,40 @@ const Benutzerliste = () => {
                                 },
                             }}
                         >
-                            <option value="">Alle Organisationen</option>
+                            <option value=""> </option>
                             {organisations.map((org) => (
                                 <option key={org} value={org}>
                                     {org}
+                                </option>
+                            ))}
+                        </TextField>
+                        <TextField
+                            fullWidth
+                            select
+                            label="Nach Rolle filtern"
+                            value={roleFilter}
+                            onChange={handleRoleFilter}
+                            variant="outlined"
+                            size="small"
+                            SelectProps={{
+                                native: true,
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    '&:hover fieldset': {
+                                        borderColor: '#4169E1',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#4169E1',
+                                        boxShadow: '0 0 0 3px rgba(65, 105, 225, 0.1)',
+                                    },
+                                },
+                            }}
+                        >
+                            <option value=""></option>
+                            {availableRoles.map((role, index) => (
+                                <option key={role.id || `role-${index}`} value={role.label}>
+                                    {role.label}
                                 </option>
                             ))}
                         </TextField>
@@ -500,7 +533,7 @@ const Benutzerliste = () => {
             {error && (
                 <Alert
                     severity="error"
-                    sx={{ mb: 2, borderRadius: 1 }}
+                    sx={{ mb: 2, mx: 2, borderRadius: 1 }}
                     onClose={() => setError(null)}
                 >
                     {error}
@@ -516,8 +549,11 @@ const Benutzerliste = () => {
                     component={Paper}
                     sx={{
                         boxShadow: '0 4px 12px rgba(65, 105, 225, 0.12)',
-                        borderRadius: 2,
-                        overflow: 'hidden',
+                        borderRadius: 0,
+                        overflow: 'auto',
+                        flex: 1,
+                        mx: 2,
+                        mb: 2
                     }}
                 >
                     <Table sx={{ minWidth: 750 }}>
@@ -541,8 +577,9 @@ const Benutzerliste = () => {
                                 </TableRow>
                             ) : (
                                 users.map((user, index) => {
-                                    // Get first organization and its first role
-                                    const firstOrg = user.organisations && user.organisations.length > 0 ? user.organisations[0] : null;
+                                    // Get first active (not deleted) organization and its first role
+                                    const activeOrgs = user.organisations?.filter(org => !org.deleted) || [];
+                                    const firstOrg = activeOrgs.length > 0 ? activeOrgs[0] : null;
                                     const orgName = firstOrg ? firstOrg.orgName : '-';
                                     const firstRole = firstOrg && firstOrg.roles && firstOrg.roles.length > 0 ? firstOrg.roles[0].roleName : '-';
 
@@ -559,9 +596,9 @@ const Benutzerliste = () => {
                                             }}
                                         >
                                             <TableCell sx={{ fontWeight: 600, color: '#4169E1' }}>@{user.username || '-'}</TableCell>
-                                            <TableCell sx={{ fontWeight: 500 }}>{user.firstname || user.firstName || '-'}</TableCell>
-                                            <TableCell sx={{ fontWeight: 500 }}>{user.lastname || user.lastName || '-'}</TableCell>
-                                            <TableCell sx={{ color: '#4169E1', fontSize: 13 }}>{user.mail || user.email || '-'}</TableCell>
+                                            <TableCell sx={{ fontWeight: 500 }}>{user.firstName || '-'}</TableCell>
+                                            <TableCell sx={{ fontWeight: 500 }}>{user.lastName || '-'}</TableCell>
+                                            <TableCell sx={{ color: '#4169E1', fontSize: 13 }}>{user.mail || '-'}</TableCell>
                                             <TableCell sx={{ fontSize: 13 }}>{orgName}</TableCell>
                                             <TableCell>
                                                 {firstRole !== '-' && (
@@ -677,14 +714,14 @@ const Benutzerliste = () => {
                 </DialogActions>
             </Dialog>
 
-            {/* Formular für Create/Edit */}
-            <BenutzerForm
+            {/* Formular für Create/Edit mit Stepper */}
+            <BenutzerFormStepper
                 open={formOpen}
                 onClose={handleCloseForm}
                 onSuccess={handleFormSuccess}
                 editUser={editingUser}
             />
-        </>
+        </Box>
     );
 };
 
