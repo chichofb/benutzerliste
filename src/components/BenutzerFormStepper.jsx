@@ -52,7 +52,8 @@ import {
     Add as AddIcon,
     CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
-import userService from '../services/userService';
+// import userService from '../services/userService';
+import userService from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
 
 const steps = ['Organisationen', 'Rollen zuweisen', 'Persönliche Daten', 'Übersicht'];
 
@@ -74,8 +75,8 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
     // Persönliche Daten
     const [personalData, setPersonalData] = useState({
         username: '',
-        firstname: '',
-        lastname: '',
+        firstName: '',
+        lastName: '',
         mail: '',
         phone: ''
     });
@@ -151,8 +152,8 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
         setOrganisationRoles({});
         setPersonalData({
             username: '',
-            firstname: '',
-            lastname: '',
+            firstName: '',
+            lastName: '',
             mail: '',
             phone: ''
         });
@@ -167,8 +168,8 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
         setPersonalData({
             userUid: editUser.userUid || '',
             username: editUser.username || '',
-            firstname: editUser.firstName || '',
-            lastname: editUser.lastName || '',
+            firstName: editUser.firstName || '',
+            lastName: editUser.lastName || '',
             mail: editUser.mail || '',
             phone: editUser.phone || ''
         });
@@ -222,8 +223,8 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
             case 2: // Persönliche Daten
                 const newErrors = {};
                 if (!personalData.username?.trim()) newErrors.username = 'Benutzername ist erforderlich';
-                if (!personalData.firstname?.trim()) newErrors.firstname = 'Vorname ist erforderlich';
-                if (!personalData.lastname?.trim()) newErrors.lastname = 'Nachname ist erforderlich';
+                if (!personalData.firstName?.trim()) newErrors.firstName = 'Vorname ist erforderlich';
+                if (!personalData.lastName?.trim()) newErrors.lastName = 'Nachname ist erforderlich';
                 if (!personalData.mail?.trim()) {
                     newErrors.mail = 'E-Mail ist erforderlich';
                 } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalData.mail)) {
@@ -537,12 +538,12 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
                 <Grid item xs={12} sm={6}>
                     <TextField
                         fullWidth
-                        name="firstname"
+                        name="firstName"
                         label="Vorname"
-                        value={personalData.firstname}
+                        value={personalData.firstName}
                         onChange={handlePersonalDataChange}
-                        error={!!errors.firstname}
-                        helperText={errors.firstname}
+                        error={!!errors.firstName}
+                        helperText={errors.firstName}
                         required
                         InputProps={{
                             startAdornment: <PersonIcon sx={{ mr: 1, color: '#4169E1' }} />
@@ -552,12 +553,12 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
                 <Grid item xs={12} sm={6}>
                     <TextField
                         fullWidth
-                        name="lastname"
+                        name="lastName"
                         label="Nachname"
-                        value={personalData.lastname}
+                        value={personalData.lastName}
                         onChange={handlePersonalDataChange}
-                        error={!!errors.lastname}
-                        helperText={errors.lastname}
+                        error={!!errors.lastName}
+                        helperText={errors.lastName}
                         required
                         InputProps={{
                             startAdornment: <PersonIcon sx={{ mr: 1, color: '#4169E1' }} />
@@ -599,56 +600,176 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
     // Schritt 4: Übersicht
     const renderOverviewStep = () => (
         <Box>
-            <Typography variant="h6" sx={{ mb: 2, color: '#4169E1', fontWeight: 700 }}>
-                Übersicht und Bestätigung
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
-                Bitte überprüfen Sie alle Angaben vor dem Speichern.
-            </Typography>
+            <Box sx={{
+                mb: 3,
+                p: 3,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.08) 0%, rgba(69, 160, 73, 0.08) 100%)',
+                border: '2px solid rgba(76, 175, 80, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+            }}>
+                <CheckCircleIcon sx={{ fontSize: 48, color: '#4CAF50' }} />
+                <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#4CAF50', mb: 0.5 }}>
+                        Bereit zum Speichern!
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#666' }}>
+                        Bitte überprüfen Sie alle Angaben vor dem Speichern.
+                    </Typography>
+                </Box>
+            </Box>
 
             {/* Persönliche Daten */}
-            <Paper sx={{ p: 3, mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#4169E1' }}>
-                    Persönliche Daten
-                </Typography>
-                <Grid container spacing={2}>
+            <Paper elevation={0} sx={{
+                p: 3,
+                mb: 2,
+                border: '2px solid rgba(65, 105, 225, 0.2)',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.04) 0%, rgba(46, 76, 184, 0.04) 100%)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                    borderColor: '#4169E1',
+                    boxShadow: '0 4px 12px rgba(65, 105, 225, 0.15)',
+                }
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 40,
+                        height: 40,
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
+                        boxShadow: '0 4px 12px rgba(65, 105, 225, 0.3)'
+                    }}>
+                        <PersonIcon sx={{ color: 'white', fontSize: 24 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#4169E1' }}>
+                        Persönliche Daten
+                    </Typography>
+                </Box>
+                <Grid container spacing={2.5}>
                     <Grid item xs={12}>
-                        <Typography variant="body2" color="textSecondary">Benutzername</Typography>
-                        <Typography variant="body1" fontWeight={600}>@{personalData.username}</Typography>
+                        <Box sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)', borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 0.5 }}>
+                                Benutzername
+                            </Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#4169E1' }}>@{personalData.username}</Typography>
+                        </Box>
                     </Grid>
-                    <Grid item xs={6}>
-                        <Typography variant="body2" color="textSecondary">Vorname</Typography>
-                        <Typography variant="body1" fontWeight={600}>{personalData.firstname}</Typography>
+                    <Grid item xs={12} sm={6}>
+                        <Box sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)', borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 0.5 }}>
+                                Vorname
+                            </Typography>
+                            <Typography variant="body1" fontWeight={600}>{personalData.firstName}</Typography>
+                        </Box>
                     </Grid>
-                    <Grid item xs={6}>
-                        <Typography variant="body2" color="textSecondary">Nachname</Typography>
-                        <Typography variant="body1" fontWeight={600}>{personalData.lastname}</Typography>
+                    <Grid item xs={12} sm={6}>
+                        <Box sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)', borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 0.5 }}>
+                                Nachname
+                            </Typography>
+                            <Typography variant="body1" fontWeight={600}>{personalData.lastName}</Typography>
+                        </Box>
                     </Grid>
-                    <Grid item xs={6}>
-                        <Typography variant="body2" color="textSecondary">E-Mail</Typography>
-                        <Typography variant="body1" fontWeight={600}>{personalData.mail}</Typography>
+                    <Grid item xs={12} sm={6}>
+                        <Box sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)', borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <EmailIcon sx={{ color: '#4169E1', fontSize: 20 }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block' }}>
+                                        E-Mail
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight={600} sx={{ color: '#4169E1' }}>{personalData.mail}</Typography>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Grid>
-                    <Grid item xs={6}>
-                        <Typography variant="body2" color="textSecondary">Telefon</Typography>
-                        <Typography variant="body1" fontWeight={600}>{personalData.phone || '-'}</Typography>
+                    <Grid item xs={12} sm={6}>
+                        <Box sx={{ p: 2, backgroundColor: 'rgba(255, 255, 255, 0.7)', borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <PhoneIcon sx={{ color: '#4169E1', fontSize: 20 }} />
+                                <Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block' }}>
+                                        Telefon
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight={600}>{personalData.phone || '-'}</Typography>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Grid>
                 </Grid>
             </Paper>
 
             {/* Organisationen & Rollen */}
-            <Paper sx={{ p: 3 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#4169E1' }}>
-                    Organisationen & Rollen
-                </Typography>
-                {selectedOrganisations.map((org) => {
+            <Paper elevation={0} sx={{
+                p: 3,
+                border: '2px solid rgba(255, 152, 0, 0.3)',
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, rgba(255, 152, 0, 0.04) 0%, rgba(245, 124, 0, 0.04) 100%)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                    borderColor: '#FF9800',
+                    boxShadow: '0 4px 12px rgba(255, 152, 0, 0.15)',
+                }
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 40,
+                        height: 40,
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)',
+                        boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)'
+                    }}>
+                        <BusinessIcon sx={{ color: 'white', fontSize: 24 }} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#FF9800' }}>
+                        Organisationen & Rollen
+                    </Typography>
+                </Box>
+                {selectedOrganisations.map((org, index) => {
                     const roles = (organisationRoles[org.id] || [])
                         .map(roleId => availableRoles.find(r => r.id === roleId))
                         .filter(Boolean);
 
                     return (
-                        <Box key={org.id} sx={{ mb: 2, p: 2, backgroundColor: 'rgba(65, 105, 225, 0.04)', borderRadius: 2 }}>
-                            <Typography variant="body1" fontWeight={600} sx={{ mb: 1 }}>
-                                {org.label}
+                        <Box
+                            key={org.id}
+                            sx={{
+                                mb: index < selectedOrganisations.length - 1 ? 2.5 : 0,
+                                p: 2.5,
+                                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                borderRadius: 2,
+                                border: '1px solid rgba(255, 152, 0, 0.2)',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                    borderColor: '#FF9800',
+                                }
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                <Chip
+                                    label={org.label}
+                                    size="medium"
+                                    sx={{
+                                        backgroundColor: '#FF9800',
+                                        color: '#FFF',
+                                        fontWeight: 700,
+                                        fontSize: '0.9rem',
+                                        height: 32
+                                    }}
+                                />
+                            </Box>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: 1, display: 'block', mb: 1 }}>
+                                Zugewiesene Rollen
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                 {roles.map((role) => (
@@ -656,6 +777,7 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
                                         key={role.id}
                                         label={role.label}
                                         size="small"
+                                        icon={<BadgeIcon sx={{ fontSize: 16 }} />}
                                         sx={{ backgroundColor: '#4169E1', color: '#FFF', fontWeight: 600 }}
                                     />
                                 ))}

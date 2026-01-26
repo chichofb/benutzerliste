@@ -235,21 +235,34 @@ const BenutzerDetail = ({ user }) => {
                                         elevation={0}
                                         sx={{
                                             p: 3,
-                                            border: '2px solid rgba(65, 105, 225, 0.2)',
+                                            border: '2px solid rgba(255, 152, 0, 0.3)',
                                             borderRadius: 3,
-                                            background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.04) 0%, rgba(46, 76, 184, 0.04) 100%)',
+                                            background: 'linear-gradient(135deg, rgba(255, 152, 0, 0.04) 0%, rgba(245, 124, 0, 0.04) 100%)',
                                             transition: 'all 0.3s ease',
                                             '&:hover': {
-                                                background: 'linear-gradient(135deg, rgba(65, 105, 225, 0.08) 0%, rgba(46, 76, 184, 0.08) 100%)',
-                                                borderColor: '#4169E1',
-                                                boxShadow: '0 4px 12px rgba(65, 105, 225, 0.15)',
+                                                background: 'linear-gradient(135deg, rgba(255, 152, 0, 0.08) 0%, rgba(245, 124, 0, 0.08) 100%)',
+                                                borderColor: '#FF9800',
+                                                boxShadow: '0 4px 12px rgba(255, 152, 0, 0.2)',
                                                 transform: 'translateY(-2px)'
                                             },
                                         }}
                                     >
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#4169E1', mb: 2, fontSize: '1.1rem' }}>
-                                            {org.orgName || 'Ohne Organisation'}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                                            <Chip
+                                                label={org.orgName || 'Ohne Organisation'}
+                                                size="medium"
+                                                sx={{
+                                                    backgroundColor: '#FF9800',
+                                                    color: '#FFF',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.95rem',
+                                                    height: 36,
+                                                    '& .MuiChip-label': {
+                                                        px: 2
+                                                    }
+                                                }}
+                                            />
+                                        </Box>
 
                                         {/* Adressinformationen */}
                                         {(org.street || org.hnr || org.postcode || org.city) && (

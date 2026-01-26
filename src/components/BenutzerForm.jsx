@@ -27,7 +27,8 @@ import {
     Business as BusinessIcon,
     Badge as BadgeIcon
 } from '@mui/icons-material';
-import userService from '../services/userService';
+// import userService from '../services/userService';
+import userService from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
 
 /**
  * BenutzerForm-Komponente
@@ -42,8 +43,8 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
     // Formular-Daten
     const [formData, setFormData] = useState({
         username: '',
-        firstname: '',
-        lastname: '',
+        firstName: '',
+        lastName: '',
         mail: '',
         phone: '',
         organisation: '',
@@ -133,8 +134,8 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
             setFormData({
                 userUid: editUser.userUid || '',
                 username: editUser.username || '',
-                firstname: editUser.firstName || '',
-                lastname: editUser.lastName || '',
+                firstName: editUser.firstName || '',
+                lastName: editUser.lastName || '',
                 mail: editUser.mail || '',
                 phone: editUser.phone || '',
                 organisation: firstOrg?.orgName || '',
@@ -144,8 +145,8 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
             // Formular zurücksetzen für neuen Benutzer
             setFormData({
                 username: '',
-                firstname: '',
-                lastname: '',
+                firstName: '',
+                lastName: '',
                 mail: '',
                 phone: '',
                 organisation: '',
@@ -190,13 +191,13 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
         }
 
         // Vorname ist Pflichtfeld
-        if (!formData.firstname || formData.firstname.trim() === '') {
-            newErrors.firstname = 'Vorname ist erforderlich';
+        if (!formData.firstName || formData.firstName.trim() === '') {
+            newErrors.firstName = 'Vorname ist erforderlich';
         }
 
         // Nachname ist Pflichtfeld
-        if (!formData.lastname || formData.lastname.trim() === '') {
-            newErrors.lastname = 'Nachname ist erforderlich';
+        if (!formData.lastName || formData.lastName.trim() === '') {
+            newErrors.lastName = 'Nachname ist erforderlich';
         }
 
         // Email-Validierung
@@ -256,8 +257,8 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
     const handleClose = () => {
         setFormData({
             username: '',
-            firstname: '',
-            lastname: '',
+            firstName: '',
+            lastName: '',
             mail: '',
             phone: '',
             organisation: '',
@@ -449,12 +450,12 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                         <TextField
                             fullWidth
                             required
-                            name="firstname"
+                            name="firstName"
                             label="Vorname"
-                            value={formData.firstname}
+                            value={formData.firstName}
                             onChange={handleChange}
-                            error={!!errors.firstname}
-                            helperText={errors.firstname}
+                            error={!!errors.firstName}
+                            helperText={errors.firstName}
                             disabled={loading}
                             sx={{
                                 '& .MuiOutlinedInput-root': {
@@ -482,12 +483,12 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
                         <TextField
                             fullWidth
                             required
-                            name="lastname"
+                            name="lastName"
                             label="Nachname"
-                            value={formData.lastname}
+                            value={formData.lastName}
                             onChange={handleChange}
-                            error={!!errors.lastname}
-                            helperText={errors.lastname}
+                            error={!!errors.lastName}
+                            helperText={errors.lastName}
                             disabled={loading}
                             sx={{
                                 '& .MuiOutlinedInput-root': {

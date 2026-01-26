@@ -35,7 +35,8 @@ import {
     Typography
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Search as SearchIcon, Close as CloseIcon, Add as AddIcon } from '@mui/icons-material';
-import userService from '../services/userService';
+// import userService from '../services/userService';
+import userService from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
 import BenutzerDetail from './BenutzerDetail';
 import BenutzerFormStepper from './BenutzerFormStepper';
 
@@ -563,25 +564,21 @@ const Benutzerliste = () => {
                                 <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Vorname</TableCell>
                                 <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Nachname</TableCell>
                                 <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Email</TableCell>
-                                <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Organisation</TableCell>
-                                <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Rolle</TableCell>
+                                <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Organisationen & Rollen</TableCell>
                                 <TableCell sx={{ color: '#FFFFFF', fontWeight: 700 }}>Aktionen</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {users.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 4, color: '#9E9E9E' }}>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: '#9E9E9E' }}>
                                         <Box sx={{ fontSize: 14 }}>Keine Benutzer gefunden</Box>
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 users.map((user, index) => {
-                                    // Get first active (not deleted) organization and its first role
+                                    // Get all active (not deleted) organizations
                                     const activeOrgs = user.organisations?.filter(org => !org.deleted) || [];
-                                    const firstOrg = activeOrgs.length > 0 ? activeOrgs[0] : null;
-                                    const orgName = firstOrg ? firstOrg.orgName : '-';
-                                    const firstRole = firstOrg && firstOrg.roles && firstOrg.roles.length > 0 ? firstOrg.roles[0].roleName : '-';
 
                                     return (
                                         <TableRow
@@ -599,20 +596,73 @@ const Benutzerliste = () => {
                                             <TableCell sx={{ fontWeight: 500 }}>{user.firstName || '-'}</TableCell>
                                             <TableCell sx={{ fontWeight: 500 }}>{user.lastName || '-'}</TableCell>
                                             <TableCell sx={{ color: '#4169E1', fontSize: 13 }}>{user.mail || '-'}</TableCell>
-                                            <TableCell sx={{ fontSize: 13 }}>{orgName}</TableCell>
                                             <TableCell>
-                                                {firstRole !== '-' && (
-                                                    <Chip
-                                                        label={firstRole}
-                                                        size="small"
-                                                        sx={{
-                                                            backgroundColor: '#4169E1',
-                                                            color: '#FFFFFF',
-                                                            fontWeight: 600,
-                                                        }}
-                                                    />
-                                                )}
-                                                {firstRole === '-' && (
+                                                {activeOrgs.length > 0 ? (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
+                                                        {activeOrgs.slice(0, 2).map((org, orgIdx) => (
+                                                            <Box
+                                                                key={`${user.userUid}-org-${orgIdx}`}
+                                                                sx={{
+                                                                    display: 'flex',
+                                                                    flexWrap: 'wrap',
+                                                                    alignItems: 'center',
+                                                                    gap: 0.5,
+                                                                    p: 0.8,
+                                                                    backgroundColor: '#F9FAFB',
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid #E5E7EB'
+                                                                }}
+                                                            >
+                                                                <Chip
+                                                                    label={org.orgName}
+                                                                    size="small"
+                                                                    sx={{
+                                                                        backgroundColor: '#FF9800',
+                                                                        color: '#FFFFFF',
+                                                                        fontWeight: 700,
+                                                                        height: 22,
+                                                                    }}
+                                                                />
+                                                                {org.roles && org.roles.length > 0 ? (
+                                                                    org.roles.map((role, roleIdx) => (
+                                                                        <Chip
+                                                                            key={`${user.userUid}-org-${orgIdx}-role-${roleIdx}`}
+                                                                            label={role.roleName}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                backgroundColor: '#4169E1',
+                                                                                color: '#FFFFFF',
+                                                                                fontWeight: 600,
+                                                                                height: 22,
+                                                                            }}
+                                                                        />
+                                                                    ))
+                                                                ) : (
+                                                                    <Typography variant="caption" sx={{ color: '#9E9E9E', fontSize: 11 }}>
+                                                                        Keine Rollen
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        ))}
+                                                        {activeOrgs.length > 2 && (
+                                                            <Chip
+                                                                label={`+${activeOrgs.length - 2} weitere`}
+                                                                size="small"
+                                                                onClick={() => handleViewDetails(user.userUid)}
+                                                                sx={{
+                                                                    backgroundColor: '#E0E0E0',
+                                                                    color: '#666',
+                                                                    fontWeight: 600,
+                                                                    cursor: 'pointer',
+                                                                    width: 'fit-content',
+                                                                    '&:hover': {
+                                                                        backgroundColor: '#D0D0D0',
+                                                                    },
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                ) : (
                                                     <Typography variant="body2" sx={{ color: '#9E9E9E' }}>-</Typography>
                                                 )}
                                             </TableCell>
