@@ -5,11 +5,13 @@
  * - Das komplette Material-UI Theme (Farben, Typografie, Komponenten-Styles)
  * - Das Layout mit AppBar (Kopfzeile) und Container
  * - Die Struktur der gesamten Anwendung
+ * - Benutzerinformationen aus Keycloak
  */
 
 import React from 'react'
-import { Container, Typography, Box, AppBar, Toolbar, CssBaseline, ThemeProvider, createTheme } from '@mui/material'
-import { People as PeopleIcon } from '@mui/icons-material'
+import { Container, Typography, Box, AppBar, Toolbar, CssBaseline, ThemeProvider, createTheme, Button, Menu, MenuItem, Avatar } from '@mui/material'
+import { People as PeopleIcon, AccountCircle, ExitToApp } from '@mui/icons-material'
+// import { useKeycloak } from '@react-keycloak/web'
 import Benutzerliste from './components/Benutzerliste'
 
 /**
@@ -161,6 +163,26 @@ const theme = createTheme({
  * Rendert das komplette Layout der Anwendung
  */
 function App() {
+    // const { keycloak, initialized } = useKeycloak()
+    const [anchorEl, setAnchorEl] = React.useState(null)
+
+    const handleMenu = (event) => {
+        setAnchorEl(event.currentTarget)
+    }
+
+    const handleClose = () => {
+        setAnchorEl(null)
+    }
+
+    // const handleLogout = () => {
+    //     keycloak.logout()
+    // }
+
+    // Warten bis Keycloak initialisiert ist
+    // if (!initialized) {
+    //     return <div>Lade...</div>
+    // }
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
@@ -211,6 +233,51 @@ function App() {
                         >
                             Benutzerverwaltung
                         </Typography>
+
+                        {/* Benutzer-Menü */}
+                        {/* {keycloak.authenticated && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                    {keycloak.tokenParsed?.preferred_username || keycloak.tokenParsed?.name || 'Benutzer'}
+                                </Typography>
+                                <Button
+                                    color="inherit"
+                                    onClick={handleMenu}
+                                    startIcon={<AccountCircle />}
+                                    sx={{
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            background: 'rgba(255, 255, 255, 0.15)'
+                                        }
+                                    }}
+                                >
+                                    Profil
+                                </Button>
+                                <Menu
+                                    anchorEl={anchorEl}
+                                    open={Boolean(anchorEl)}
+                                    onClose={handleClose}
+                                    anchorOrigin={{
+                                        vertical: 'bottom',
+                                        horizontal: 'right',
+                                    }}
+                                    transformOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'right',
+                                    }}
+                                >
+                                    <MenuItem disabled>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {keycloak.tokenParsed?.email || 'Keine E-Mail'}
+                                        </Typography>
+                                    </MenuItem>
+                                    <MenuItem onClick={handleLogout}>
+                                        <ExitToApp sx={{ mr: 1 }} />
+                                        Abmelden
+                                    </MenuItem>
+                                </Menu>
+                            </Box>
+                        )} */}
                     </Toolbar>
                 </AppBar>
 

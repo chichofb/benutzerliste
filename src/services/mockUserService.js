@@ -4,6 +4,18 @@
  * Dieser Service ersetzt userService.js für Tests ohne Backend
  */
 
+// Variable für Keycloak-Instanz (wird von außen gesetzt)
+let keycloakInstance = null;
+
+/**
+ * Keycloak-Instanz setzen
+ * Diese Methode muss beim App-Start aufgerufen werden
+ * @param {Object} keycloak - Die Keycloak-Instanz aus useKeycloak()
+ */
+export const setKeycloakInstance = (keycloak) => {
+    keycloakInstance = keycloak;
+};
+
 // Mock-Daten für Benutzer
 const mockUsers = [
     {

@@ -8,6 +8,7 @@
  * - Anzeige von Benutzerdetails in einem Modal
  * - Löschen von Benutzern mit Bestätigungsdialog
  * - Kommunikation mit dem Backend über userService
+ * - Keycloak-Integration für Authentifizierung
  */
 
 import React, { useState, useEffect } from 'react';
@@ -35,12 +36,22 @@ import {
     Typography
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Search as SearchIcon, Close as CloseIcon, Add as AddIcon } from '@mui/icons-material';
+// import { useKeycloak } from '@react-keycloak/web';
 // import userService from '../services/userService';
-import userService from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
+import userService, { setKeycloakInstance } from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
 import BenutzerDetail from './BenutzerDetail';
 import BenutzerFormStepper from './BenutzerFormStepper';
 
 const Benutzerliste = () => {
+    // const { keycloak } = useKeycloak();
+
+    // Keycloak-Instanz im userService setzen
+    // useEffect(() => {
+    //     if (keycloak) {
+    //         setKeycloakInstance(keycloak);
+    //     }
+    // }, [keycloak]);
+
     // ========== STATE-VERWALTUNG ==========
 
     // Vollständige Benutzerliste (ungefiltert)
@@ -76,8 +87,14 @@ const Benutzerliste = () => {
     // Liste aller verfügbaren Organisationen (für Filter-Dropdown)
     const [organisations, setOrganisations] = useState([]);
 
+    // Map für Organisation Name -> UUID
+    const [orgNameToUidMap, setOrgNameToUidMap] = useState({});
+
     // Liste aller verfügbaren Rollen (für Filter-Dropdown)
     const [availableRoles, setAvailableRoles] = useState([]);
+
+    // Map für Rollen Name -> ID/UUID
+    const [roleNameToIdMap, setRoleNameToIdMap] = useState({});
 
     // Ausgewählte Rolle für Filterung
     const [roleFilter, setRoleFilter] = useState('');
@@ -103,23 +120,42 @@ const Benutzerliste = () => {
     // ========== API-KOMMUNIKATION ==========
 
     /**
-     * Benutzer vom Backend laden
-     * @param {Object} params - Optionale Suchparameter für die API
+     * Benutzer vom Backend laden mit Server-Side-Filtering
+     * @param {string} nameSearch - Suchbegriff für Username/Nachname
+     * @param {string} orgUid - Organisation UID zum Filtern
+     * @param {string} roleId - Rollen-ID zum Filtern
      * 
      * Diese Funktion:
      * 1. Setzt den Ladezustand
-     * 2. Ruft die API über userService auf
-     * 3. Verarbeitet verschiedene Antwortformate (HAL, Array, Content)
-     * 4. Extrahiert und speichert die Benutzerdaten
-     * 5. Extrahiert die Organisationen für den Filter
+     * 2. Baut Filter-Parameter für Backend auf
+     * 3. Ruft die API über userService auf
+     * 4. Verarbeitet verschiedene Antwortformate (HAL, Array, Content)
+     * 5. Extrahiert und speichert die Benutzerdaten
+     * 6. Extrahiert die Organisationen für den Filter
      */
-    const fetchUsers = async (params = {}) => {
+    const fetchUsers = async (nameSearch = '', orgUid = '', roleId = '') => {
         setLoading(true);
         setError(null);
 
         try {
-            // API-Aufruf über userService
-            const response = await userService.getUsers(params);
+            console.log('fetchUsers called with:', { nameSearch, orgUid, roleId });
+
+            // Filter-Parameter für Backend vorbereiten
+            const searchParams = {};
+            if (nameSearch) {
+                searchParams.searchUsernameOrLastname = nameSearch;
+            }
+            if (orgUid) {
+                searchParams.orgUid = orgUid;
+            }
+            if (roleId) {
+                searchParams.roleId = roleId;  // Backend erwartet roleId, nicht roleName!
+            }
+
+            console.log('Sending searchParams to backend:', searchParams);
+
+            // API-Aufruf über userService mit Filter-Parametern
+            const response = await userService.getUsers(searchParams);
             console.log('API Response:', response);
 
             // ===== Verschiedene API-Antwortformate verarbeiten =====
@@ -138,7 +174,7 @@ const Benutzerliste = () => {
             console.log('Extracted users:', userList);
             const userArray = Array.isArray(userList) ? userList : [];
             setAllUsers(userArray);  // Vollständige Liste speichern
-            setUsers(userArray);      // Gefilterte Liste initial gleich
+            setUsers(userArray);     // Gefilterte Liste vom Backend anzeigen
         } catch (err) {
             setError('Fehler beim Laden der Benutzer');
             console.error('Error details:', err.response?.data || err.message);
@@ -153,12 +189,23 @@ const Benutzerliste = () => {
     const fetchOrganisations = async () => {
         try {
             const orgs = await userService.getOrganisations();
-            // API gibt [{uuid, label}] zurück, wir brauchen nur die Labels für Filter
-            const orgLabels = Array.isArray(orgs) ? orgs.map(org => org.label) : [];
-            setOrganisations(orgLabels.sort());
+            // API gibt [{uuid, label}] zurück
+            if (Array.isArray(orgs)) {
+                const orgLabels = orgs.map(org => org.label).sort();
+                setOrganisations(orgLabels);
+
+                // Map erstellen: Organisationsname -> UUID
+                const nameToUid = {};
+                orgs.forEach(org => {
+                    nameToUid[org.label] = org.uuid;
+                });
+                setOrgNameToUidMap(nameToUid);
+                console.log('Organisations-Map erstellt:', nameToUid);
+            }
         } catch (err) {
             console.error('Fehler beim Laden der Organisationen:', err);
             setOrganisations([]);
+            setOrgNameToUidMap({});
         }
     };
 
@@ -168,14 +215,27 @@ const Benutzerliste = () => {
     const fetchRoles = async () => {
         try {
             const roles = await userService.getRoles();
+            console.log('Geladene Rollen vom Backend:', roles);
+
             // API gibt uuid statt id zurück - transformieren
             const transformedRoles = Array.isArray(roles)
                 ? roles.map(role => ({ id: role.uuid || role.id, label: role.label }))
                 : [];
             setAvailableRoles(transformedRoles);
+
+            // Map erstellen: Rollenname -> UUID/ID (für Backend-Filter)
+            const nameToId = {};
+            if (Array.isArray(roles)) {
+                roles.forEach(role => {
+                    nameToId[role.label] = role.uuid || role.id;
+                });
+            }
+            setRoleNameToIdMap(nameToId);
+            console.log('Rollen-Map erstellt:', nameToId);
         } catch (err) {
             console.error('Fehler beim Laden der Rollen:', err);
             setAvailableRoles([]);
+            setRoleNameToIdMap({});
         }
     };
 
@@ -185,94 +245,83 @@ const Benutzerliste = () => {
      * Handler für Name/Email/Benutzername-Suche
      * @param {Event} e - Input-Change-Event
      * 
-     * Wird bei jeder Eingabe im Suchfeld aufgerufen
+     * Wird bei jeder Eingabe im Suchfeld aufgerufen und löst Backend-Filterung aus
      */
     const handleNameSearch = (e) => {
         const value = e.target.value;
         setSearchTerm(value);
-        applyFilters(value, organisationFilter, roleFilter);
+
+        // Organisation-Name in UUID umwandeln
+        const orgUid = organisationFilter ? orgNameToUidMap[organisationFilter] : '';
+
+        // Rollen-Name in ID umwandeln
+        const roleId = roleFilter ? roleNameToIdMap[roleFilter] : '';
+
+        // Server-Side-Filtering: Backend neu abfragen
+        fetchUsers(value, orgUid, roleId);
     };
 
     /**
      * Handler für Organisations-Filter
      * @param {Event} e - Select-Change-Event
      * 
-     * Wird aufgerufen, wenn eine Organisation im Dropdown ausgewählt wird.
+     * Wird aufgerufen, wenn eine Organisation im Dropdown ausgewählt wird und löst Backend-Filterung aus
      */
     const handleOrganisationFilter = (e) => {
-        const value = e.target.value;
-        setOrganisationFilter(value);
-        applyFilters(searchTerm, value, roleFilter);
+        const orgName = e.target.value;
+        setOrganisationFilter(orgName);
+
+        // Organisation-Name in UUID umwandeln
+        const orgUid = orgName ? orgNameToUidMap[orgName] : '';
+
+        // Rollen-Name in ID umwandeln
+        const roleId = roleFilter ? roleNameToIdMap[roleFilter] : '';
+
+        console.log('Filter Organisation:', { orgName, orgUid, roleId });
+
+        // Server-Side-Filtering: Backend mit UUID abfragen
+        fetchUsers(searchTerm, orgUid, roleId);
     };
 
     /**
      * Handler für Rollen-Filter
      * @param {Event} e - Select-Change-Event
      * 
-     * Wird aufgerufen, wenn eine Rolle im Dropdown ausgewählt wird.
+     * Wird aufgerufen, wenn eine Rolle im Dropdown ausgewählt wird und löst Backend-Filterung aus
      */
     const handleRoleFilter = (e) => {
-        const value = e.target.value;
-        setRoleFilter(value);
-        applyFilters(searchTerm, organisationFilter, value);
+        const roleName = e.target.value;
+        setRoleFilter(roleName);
+
+        // Organisation-Name in UUID umwandeln
+        const orgUid = organisationFilter ? orgNameToUidMap[organisationFilter] : '';
+
+        // Rollen-Name in ID/UUID umwandeln
+        const roleId = roleName ? roleNameToIdMap[roleName] : '';
+
+        console.log('=== Filter Rolle ===');
+        console.log('Rollenname:', roleName);
+        console.log('Rollen-ID:', roleId);
+        console.log('Suchbegriff:', searchTerm);
+        console.log('Org-UUID:', orgUid);
+
+        // Server-Side-Filtering: Backend mit roleId (nicht roleName!) abfragen
+        fetchUsers(searchTerm, orgUid, roleId);
     };
 
     /**
-     * Alle Filter gleichzeitig anwenden
-     * @param {string} nameFilter - Suchbegriff für Name/Email/Username
-     * @param {string} orgFilter - Ausgewählte Organisation
-     * @param {string} roleFilterValue - Ausgewählte Rolle
+     * HINWEIS: Client-seitige Filterung wurde entfernt!
      * 
-     * Diese Funktion kombiniert alle Filter:
-     * 1. Suche nach Name/Email/Username (Case-insensitive)
-     * 2. Filterung nach Organisation
-     * 3. Filterung nach Rolle
+     * Alle Filter werden jetzt SERVER-SEITIG im Backend angewendet.
+     * Die Filter-Handler (handleNameSearch, handleOrganisationFilter, handleRoleFilter)
+     * rufen direkt fetchUsers() auf, welche die Parameter ans Backend sendet.
      * 
-     * WICHTIG: Filter werden CLIENT-SEITIG angewendet!
+     * Vorteile:
+     * - Bessere Performance bei großen Datenmengen
+     * - Weniger Netzwerkverkehr (nur gefilterte Daten werden übertragen)
+     * - Geringerer Speicherverbrauch im Browser
+     * - Konsistente Filterlogik (Backend ist Single Source of Truth)
      */
-    const applyFilters = (nameFilter, orgFilter, roleFilterValue) => {
-        // Wenn keine Filter aktiv sind, vollständige Liste anzeigen
-        if (!nameFilter && !orgFilter && !roleFilterValue) {
-            setUsers(allUsers);
-            return;
-        }
-
-        // WICHTIG: Immer auf der vollständigen Liste filtern!
-        let filtered = allUsers;
-
-        // ===== Name/Email/Username-Filter =====
-        if (nameFilter) {
-            const searchLower = nameFilter.toLowerCase();  // Kleinbuchstaben für Case-Insensitive-Suche
-
-            filtered = filtered.filter(user =>
-                // Suche in verschiedenen Feldern (Vorname, Nachname, Username, Email)
-                (user.firstName && user.firstName.toLowerCase().includes(searchLower)) ||
-                (user.lastName && user.lastName.toLowerCase().includes(searchLower)) ||
-                (user.username && user.username.toLowerCase().includes(searchLower)) ||
-                (user.mail && user.mail.toLowerCase().includes(searchLower))
-            );
-        }
-
-        // ===== Organisations-Filter =====
-        if (orgFilter) {
-            filtered = filtered.filter(user =>
-                user.organisations &&
-                user.organisations.some(org => !org.deleted && org.orgName === orgFilter)
-            );
-        }
-
-        // ===== Rollen-Filter =====
-        if (roleFilterValue) {
-            filtered = filtered.filter(user =>
-                user.organisations &&
-                user.organisations.some(org =>
-                    !org.deleted && org.roles && org.roles.some(role => role.roleName === roleFilterValue)
-                )
-            );
-        }
-
-        setUsers(filtered);
-    };
 
     // ========== DETAIL-ANSICHT FUNKTIONEN ==========
 

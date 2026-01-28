@@ -4,6 +4,7 @@
  * Diese Datei verwaltet alle HTTP-Anfragen zum Backend:
  * - CRUD-Operationen für Benutzer (Create, Read, Update, Delete)
  * - Axios-Konfiguration mit CORS-Unterstützung
+ * - Keycloak-Token-Integration für Authentifizierung
  * - Fehlerbehandlung für API-Aufrufe
  */
 
@@ -11,6 +12,18 @@ import axios from 'axios';
 
 // Basis-URL des Spring Boot Backend-Servers
 const API_BASE_URL = 'http://localhost:8080/api';
+
+// Variable für Keycloak-Instanz (wird von außen gesetzt)
+let keycloakInstance = null;
+
+/**
+ * Keycloak-Instanz setzen
+ * Diese Methode muss beim App-Start aufgerufen werden
+ * @param {Object} keycloak - Die Keycloak-Instanz aus useKeycloak()
+ */
+export const setKeycloakInstance = (keycloak) => {
+    keycloakInstance = keycloak;
+};
 
 /**
  * Konfigurierte Axios-Instanz für API-Anfragen
@@ -28,23 +41,86 @@ const axiosInstance = axios.create({
 });
 
 /**
+ * Request Interceptor: Fügt Keycloak-Token zu jedem Request hinzu
+ */
+axiosInstance.interceptors.request.use(
+    async (config) => {
+        if (keycloakInstance && keycloakInstance.token) {
+            // Token automatisch erneuern, wenn es bald abläuft (5 Sekunden vor Ablauf)
+            try {
+                await keycloakInstance.updateToken(5);
+            } catch (error) {
+                console.error('Token konnte nicht erneuert werden:', error);
+                keycloakInstance.login();
+            }
+
+            // Bearer Token zu Authorization-Header hinzufügen
+            config.headers.Authorization = `Bearer ${keycloakInstance.token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+/**
+ * Response Interceptor: Behandelt 401-Fehler (nicht autorisiert)
+ */
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && keycloakInstance) {
+            // Bei 401 Fehler: Benutzer zur Anmeldung weiterleiten
+            keycloakInstance.login();
+        }
+        return Promise.reject(error);
+    }
+);
+
+/**
  * UserService-Objekt mit allen API-Methoden für Benutzerverwaltung
  */
 const userService = {
     /**
      * Alle Benutzer abrufen mit optionalen Suchparametern
      * @param {Object} searchParams - Optional: Filter-Parameter für die Suche
+     * @param {string} searchParams.searchUsernameOrLastname - Suche nach Username oder Nachname
+     * @param {string} searchParams.orgUid - Organisation UID zum Filtern
+     * @param {string} searchParams.roleName - Rollenname zum Filtern
      * @returns {Promise} Promise mit Benutzerdaten vom Server
      */
-    getUsers: async (/*searchParams = {}*/) => {
+    getUsers: async (searchParams = {}) => {
         try {
-            // GET-Request an /api/users mit optionalen Query-Parametern
-            const response = await axiosInstance.get('/users', {
-                // params: searchParams  // z.B. ?name=Max&organisation=IT
-            });
+            // Query-Parameter als flache Struktur vorbereiten
+            const params = {};
+
+            // Suchbegriff für Username/Nachname
+            if (searchParams.searchUsernameOrLastname) {
+                params.searchUsernameOrLastname = searchParams.searchUsernameOrLastname;
+                params.searchMode = 'SUBSTRING';
+            }
+
+            // Organisation UID
+            if (searchParams.orgUid) {
+                params.orgUid = searchParams.orgUid;
+            }
+
+            // Rollen-Filter
+            if (searchParams.roleName) {
+                params.roleName = searchParams.roleName;
+            }
+
+            console.log('Sending request to /api/users with params:', params);
+
+            // GET-Request an /api/users mit Query-Parametern
+            const response = await axiosInstance.get('/users', { params });
+
+            console.log('Received response:', response.data);
             return response.data;  // Gibt die Benutzerliste zurück
         } catch (error) {
             console.error('Fehler beim Abrufen der Benutzer:', error);
+            console.error('Request params were:', searchParams);
             throw error;  // Fehler wird an aufrufende Komponente weitergegeben
         }
     },
