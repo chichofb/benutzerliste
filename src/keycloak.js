@@ -11,9 +11,9 @@ import Keycloak from 'keycloak-js'
  * Passe die Werte entsprechend deiner Keycloak-Installation an
  */
 const keycloak = new Keycloak({
-    url: 'http://localhost:8080', // Deine Keycloak-URL
-    realm: 'your-realm', // Dein Keycloak-Realm
-    clientId: 'your-client-id' // Deine Keycloak Client-ID
+    url: 'http://app2/auth', // Deine Keycloak-URL
+    realm: 'entwicklungstest', // Dein Keycloak-Realm
+    clientId: 'frontend' // Deine Keycloak Client-ID
 })
 
 export default keycloak

@@ -52,8 +52,8 @@ import {
     Add as AddIcon,
     CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
-// import userService from '../services/userService';
-import userService from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
+import userService from '../services/userService';  // Echter userService für Backend-API
+// import userService from '../services/mockUserService';  // Mock-Daten für lokale Tests ohne Backend
 
 const steps = ['Organisationen', 'Rollen zuweisen', 'Persönliche Daten', 'Übersicht'];
 
@@ -307,14 +307,22 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
         setError(null);
 
         try {
-            // Payload aufbauen
+            // Payload aufbauen - username wird nur für Edit benötigt, nicht für Create
             const payload = {
-                ...personalData,
+                firstName: personalData.firstName,
+                lastName: personalData.lastName,
+                mail: personalData.mail,
+                phone: personalData.phone || '',
                 organisations: selectedOrganisations.map(org => ({
                     orgUid: org.id,
                     roles: (organisationRoles[org.id] || []).map(roleId => ({ roleId }))
                 }))
             };
+
+            // Bei Edit: userUid hinzufügen
+            if (editUser && personalData.userUid) {
+                payload.userUid = personalData.userUid;
+            }
 
             console.log('Payload:', payload);
 

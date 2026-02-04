@@ -11,7 +11,7 @@
 import React from 'react'
 import { Container, Typography, Box, AppBar, Toolbar, CssBaseline, ThemeProvider, createTheme, Button, Menu, MenuItem, Avatar } from '@mui/material'
 import { People as PeopleIcon, AccountCircle, ExitToApp } from '@mui/icons-material'
-// import { useKeycloak } from '@react-keycloak/web'
+import { useKeycloak } from '@react-keycloak/web'
 import Benutzerliste from './components/Benutzerliste'
 
 /**
@@ -163,7 +163,7 @@ const theme = createTheme({
  * Rendert das komplette Layout der Anwendung
  */
 function App() {
-    // const { keycloak, initialized } = useKeycloak()
+    const { keycloak, initialized } = useKeycloak()
     const [anchorEl, setAnchorEl] = React.useState(null)
 
     const handleMenu = (event) => {
@@ -174,14 +174,14 @@ function App() {
         setAnchorEl(null)
     }
 
-    // const handleLogout = () => {
-    //     keycloak.logout()
-    // }
+    const handleLogout = () => {
+        keycloak.logout()
+    }
 
     // Warten bis Keycloak initialisiert ist
-    // if (!initialized) {
-    //     return <div>Lade...</div>
-    // }
+    if (!initialized) {
+        return <div>Lade...</div>
+    }
 
     return (
         <ThemeProvider theme={theme}>
@@ -235,7 +235,7 @@ function App() {
                         </Typography>
 
                         {/* Benutzer-Menü */}
-                        {/* {keycloak.authenticated && (
+                        {keycloak.authenticated && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
                                     {keycloak.tokenParsed?.preferred_username || keycloak.tokenParsed?.name || 'Benutzer'}
@@ -277,7 +277,7 @@ function App() {
                                     </MenuItem>
                                 </Menu>
                             </Box>
-                        )} */}
+                        )}
                     </Toolbar>
                 </AppBar>
 

@@ -12,9 +12,9 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-// import { ReactKeycloakProvider } from '@react-keycloak/web'
+import { ReactKeycloakProvider } from '@react-keycloak/web'
 import App from './App.jsx'
-// import keycloak from './keycloak.js'
+import keycloak from './keycloak.js'
 
 // Grundlegendes Theme für Material-UI erstellen
 // Wird später in App.jsx durch ein detaillierteres Theme überschrieben
@@ -25,39 +25,38 @@ const theme = createTheme({
 })
 
 // Keycloak-Initialisierungsoptionen
-// const keycloakInitOptions = {
-//     onLoad: 'login-required', // Benutzer muss sich anmelden, um die App zu nutzen
-//     checkLoginIframe: false, // Deaktiviert iframe-basierte Session-Checks (optional)
-// }
+const keycloakInitOptions = {
+    onLoad: 'login-required', // Benutzer muss sich anmelden, um die App zu nutzen
+    checkLoginIframe: false, // Deaktiviert iframe-basierte Session-Checks (optional)
+}
 
 // Loading-Komponente während Keycloak initialisiert wird
-// const LoadingComponent = (
-//     <div style={{
-//         display: 'flex',
-//         justifyContent: 'center',
-//         alignItems: 'center',
-//         height: '100vh'
-//     }}>
-//         Lade Authentifizierung...
-//     </div>
-// )
-
+const LoadingComponent = (
+    <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+    }}>
+        Lade Authentifizierung...
+    </div>
+)
 // React-App in das DOM-Element mit der ID 'root' rendern
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         {/* ReactKeycloakProvider verwaltet die Keycloak-Authentifizierung */}
-        {/* <ReactKeycloakProvider
+        <ReactKeycloakProvider
             authClient={keycloak}
             initOptions={keycloakInitOptions}
             LoadingComponent={LoadingComponent}
-        > */}
-        {/* ThemeProvider stellt das Theme für alle MUI-Komponenten bereit */}
-        <ThemeProvider theme={theme}>
-            {/* CssBaseline normalisiert CSS über verschiedene Browser hinweg */}
-            <CssBaseline />
-            {/* Hauptkomponente der Anwendung */}
-            <App />
-        </ThemeProvider>
-        {/* </ReactKeycloakProvider> */}
+        >
+            {/* ThemeProvider stellt das Theme für alle MUI-Komponenten bereit */}
+            <ThemeProvider theme={theme}>
+                {/* CssBaseline normalisiert CSS über verschiedene Browser hinweg */}
+                <CssBaseline />
+                {/* Hauptkomponente der Anwendung */}
+                <App />
+            </ThemeProvider>
+        </ReactKeycloakProvider>
     </React.StrictMode>
 )
