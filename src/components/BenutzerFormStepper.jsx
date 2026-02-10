@@ -103,12 +103,12 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
     }, [open]);
 
     useEffect(() => {
-        if (open && editUser) {
+        if (open && editUser && availableOrganisations.length > 0) {
             loadEditUser();
         } else if (open && !editUser) {
             resetForm();
         }
-    }, [open, editUser]);
+    }, [open, editUser, availableOrganisations]);
 
     // ========== API-AUFRUFE ==========
 
@@ -162,7 +162,10 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
     };
 
     const loadEditUser = () => {
-        if (!editUser) return;
+        if (!editUser || availableOrganisations.length === 0) return;
+
+        console.log('Loading editUser:', editUser);
+        console.log('Available organisations:', availableOrganisations);
 
         // Persönliche Daten laden
         setPersonalData({
@@ -177,15 +180,40 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
         // Organisationen und Rollen laden
         if (editUser.organisations && Array.isArray(editUser.organisations)) {
             const activeOrgs = editUser.organisations.filter(org => !org.deleted);
-            const orgs = activeOrgs.map(org => ({ id: org.orgUid, label: org.orgName }));
+            console.log('Active organisations from user:', activeOrgs);
+
+            // orgUid aus availableOrganisations holen durch Matching mit orgName
+            const orgs = activeOrgs
+                .map(org => {
+                    // Suche die Organisation in availableOrganisations durch orgName
+                    const matchedOrg = availableOrganisations.find(
+                        availOrg => availOrg.label === org.orgName
+                    );
+
+                    if (!matchedOrg) {
+                        console.error('Organisation nicht gefunden:', org.orgName);
+                        return null;
+                    }
+
+                    return { id: matchedOrg.id, label: org.orgName };
+                })
+                .filter(org => org !== null);
+
+            console.log('Mapped selectedOrganisations:', orgs);
             setSelectedOrganisations(orgs);
 
+            // Rollen laden und mit orgUid verknüpfen
             const roles = {};
-            activeOrgs.forEach(org => {
-                if (org.roles && Array.isArray(org.roles)) {
-                    roles[org.orgUid] = org.roles.map(role => role.roleId);
+            activeOrgs.forEach((org, index) => {
+                const matchedOrg = availableOrganisations.find(
+                    availOrg => availOrg.label === org.orgName
+                );
+
+                if (matchedOrg && org.roles && Array.isArray(org.roles)) {
+                    roles[matchedOrg.id] = org.roles.map(role => role.roleId);
                 }
             });
+            console.log('Organisation roles:', roles);
             setOrganisationRoles(roles);
         }
     };
@@ -307,6 +335,16 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
         setError(null);
 
         try {
+            console.log('Selected organisations before building payload:', selectedOrganisations);
+            console.log('Organisation roles before building payload:', organisationRoles);
+
+            // Validierung: Sicherstellen dass alle Organisationen eine orgUid haben
+            const invalidOrgs = selectedOrganisations.filter(org => !org.id);
+            if (invalidOrgs.length > 0) {
+                console.error('Ungültige Organisationen ohne ID gefunden:', invalidOrgs);
+                throw new Error('Einige Organisationen haben keine gültige ID');
+            }
+
             // Payload aufbauen - username wird nur für Edit benötigt, nicht für Create
             const payload = {
                 firstName: personalData.firstName,
@@ -324,7 +362,7 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
                 payload.userUid = personalData.userUid;
             }
 
-            console.log('Payload:', payload);
+            console.log('Final Payload:', JSON.stringify(payload, null, 2));
 
             if (editUser) {
                 await userService.updateUser(payload);

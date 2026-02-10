@@ -229,11 +229,20 @@ const userService = {
      */
     updateUser: async (userData) => {
         try {
-            // PUT-Request an /api/users mit vollständigen Benutzerdaten
-            const response = await axiosInstance.put('/users', userData);
+            if (!userData.userUid) {
+                throw new Error('userUid ist erforderlich für Update-Operation');
+            }
+
+            console.log('Updating user with userUid:', userData.userUid);
+            console.log('Update payload:', userData);
+
+            // PUT-Request an /api/users/{userUid} mit Benutzerdaten
+            const response = await axiosInstance.put(`/users/${userData.userUid}`, userData);
+            console.log('Update response:', response);
             return response.data;  // Gibt den aktualisierten Benutzer zurück
         } catch (error) {
             console.error('Fehler beim Aktualisieren des Benutzers:', error);
+            console.error('Error response:', error.response);
             throw error;
         }
     },
