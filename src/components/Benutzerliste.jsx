@@ -22,13 +22,7 @@ import {
     Chip,
     Typography,
     TablePagination,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemAvatar,
-    ListItemButton,
     Avatar,
-    Divider,
     ToggleButton,
     ToggleButtonGroup
 } from '@mui/material';
@@ -45,23 +39,9 @@ const Benutzerliste = () => {
     useEffect(() => {
         if (keycloak) {
             setKeycloakInstance(keycloak);
-            // Token in der Konsole ausgeben
-            console.log('=== KEYCLOAK TOKEN INFORMATION ===');
-            console.log('Bearer Token:', keycloak.token);
-            console.log('Token Type:', keycloak.tokenType);
-            console.log('Refresh Token:', keycloak.refreshToken);
-            console.log('Decoded Token:', keycloak.tokenParsed);
-            console.log('Token expires in:', keycloak.tokenParsed?.exp ? new Date(keycloak.tokenParsed.exp * 1000).toLocaleString() : 'N/A');
-            console.log('User ID:', keycloak.tokenParsed?.sub);
-            console.log('Username:', keycloak.tokenParsed?.preferred_username);
-            console.log('Email:', keycloak.tokenParsed?.email);
-            console.log('Roles:', keycloak.tokenParsed?.realm_access?.roles);
-            console.log('==================================');
-
         }
     }, [keycloak]);
 
-    const [allUsers, setAllUsers] = useState([]);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -79,19 +59,97 @@ const Benutzerliste = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(50);
     const [viewMode, setViewMode] = useState('cards');
+    const [contextOrgUuid, setContextOrgUuid] = useState('');
+    const [myOrganisations, setMyOrganisations] = useState([]);
     const searchTimerRef = useRef(null);
 
+    // User-Array aus verschiedenen Response-Formaten extrahieren
+    const extractUsers = (response) => {
+        if (Array.isArray(response)) return response;
+        if (!response || typeof response !== 'object') return [];
+        if (Array.isArray(response.content)) return response.content;
+        if (Array.isArray(response.data)) return response.data;
+        if (Array.isArray(response.users)) return response.users;
+        if (Array.isArray(response.items)) return response.items;
+        if (Array.isArray(response.list)) return response.list;
+        if (response._embedded) {
+            const firstKey = Object.keys(response._embedded)[0];
+            if (firstKey && Array.isArray(response._embedded[firstKey])) return response._embedded[firstKey];
+        }
+        if (response.userUid) return [response];
+        return [];
+    };
+
+    // Beim Start: Eigene Orgs laden, erste auswählen, dann Benutzerliste laden
     useEffect(() => {
-        fetchUsers();
-        fetchOrganisations();
-        fetchRoles();
+        if (!keycloak?.authenticated) return;
+
+        const init = async () => {
+            setLoading(true);
+
+            // 1. Eigene Organisationen des eingeloggten Users laden
+            let myOrgs = [];
+            try {
+                myOrgs = await userService.getMyOrganisations();
+            } catch {
+                setError('Fehler beim Laden der eigenen Organisationen.');
+                setLoading(false);
+                return;
+            }
+
+            if (!Array.isArray(myOrgs) || myOrgs.length === 0) {
+                setError('Keine Organisationen zugewiesen.');
+                setLoading(false);
+                return;
+            }
+
+            // Eigene Orgs für Kontext-Switcher speichern
+            setMyOrganisations(myOrgs);
+
+            // 2. Erste eigene Org direkt als Kontext verwenden
+            const firstOrgId = myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
+            setContextOrgUuid(firstOrgId);
+
+            // 3. Benutzerliste mit dieser Org laden
+            try {
+                const response = await userService.getUsers({}, firstOrgId);
+                setUsers(extractUsers(response));
+            } catch (err) {
+                const data = err.response?.data;
+                const serverMsg = data?.message || data?.error || data?.detail
+                    || (typeof data === 'string' && data) || err.message;
+                setError(`Fehler beim Laden der Benutzer (${err.response?.status ?? '?'}): ${serverMsg}`);
+            } finally {
+                setLoading(false);
+            }
+
+            // 4. Alle Orgs für Filter-Dropdown und Rollen parallel laden
+            try {
+                const orgs = await userService.getOrganisations();
+                if (Array.isArray(orgs)) {
+                    setOrganisations(orgs.sort((a, b) => (a.label || '').localeCompare(b.label || '')));
+                }
+            } catch { /* Filter-Dropdown bleibt leer */ }
+
+            fetchRoles();
+        };
+        init();
+
         return () => {
             if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
         };
-    }, []);
+    }, [keycloak?.authenticated]);
 
-    // Server-Side-Filtering: Verarbeitet HAL, Array und Content-Formate
-    const fetchUsers = async (nameSearch = '', orgUid = '', roleId = '') => {
+    // Organisations-Kontext wechseln → Benutzer neu laden
+    const handleContextOrgChange = (newOrgUuid) => {
+        setContextOrgUuid(newOrgUuid);
+        setPage(0);
+        if (newOrgUuid) fetchUsersWithContext(newOrgUuid, searchTerm, organisationFilter, roleFilter);
+    };
+
+    // Benutzer mit contextOrgUuid laden
+    const fetchUsersWithContext = async (ctxOrgUuid, nameSearch = '', orgUid = '', roleId = '') => {
+        if (!ctxOrgUuid) return;
         setLoading(true);
         setError(null);
 
@@ -99,40 +157,25 @@ const Benutzerliste = () => {
             const searchParams = {};
             if (nameSearch) searchParams.searchUsernameOrLastname = nameSearch;
             if (orgUid) searchParams.orgUid = orgUid;
-            if (roleId) searchParams.roleId = roleId;
+            if (roleId) searchParams.roleIds = [roleId];
 
-            const response = await userService.getUsers(searchParams);
+            const response = await userService.getUsers(searchParams, ctxOrgUuid);
 
-            let userList = [];
-            if (response._embedded && response._embedded.users) {
-                userList = response._embedded.users;
-            } else if (Array.isArray(response)) {
-                userList = response;
-            } else if (response.content && Array.isArray(response.content)) {
-                userList = response.content;
-            }
-
-            const userArray = Array.isArray(userList) ? userList : [];
-            setAllUsers(userArray);
+            const userArray = extractUsers(response);
             setUsers(userArray);
         } catch (err) {
-            setError('Fehler beim Laden der Benutzer');
-            console.error('Error details:', err.response?.data || err.message);
+            const data = err.response?.data;
+            const serverMsg = data?.message || data?.error || data?.detail
+                || (typeof data === 'string' && data) || err.message;
+            setError(`Fehler beim Laden der Benutzer (${err.response?.status ?? '?'}): ${serverMsg}`);
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchOrganisations = async () => {
-        try {
-            const orgs = await userService.getOrganisations();
-            if (Array.isArray(orgs)) {
-                setOrganisations(orgs.sort((a, b) => a.label.localeCompare(b.label)));
-            }
-        } catch (err) {
-            console.error('Fehler beim Laden der Organisationen:', err);
-            setOrganisations([]);
-        }
+    // Server-Side-Filtering: Verarbeitet HAL, Array und Content-Formate
+    const fetchUsers = async (nameSearch = '', orgUid = '', roleId = '') => {
+        fetchUsersWithContext(contextOrgUuid, nameSearch, orgUid, roleId);
     };
 
     const fetchRoles = async () => {
@@ -176,7 +219,7 @@ const Benutzerliste = () => {
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
     const handleViewDetails = async (userId) => {
         try {
-            const response = await userService.getUserById(userId);
+            const response = await userService.getUserById(userId, contextOrgUuid);
             setSelectedUser(response.content || response);
             setDetailOpen(true);
         } catch (err) {
@@ -252,7 +295,51 @@ const Benutzerliste = () => {
             width: '100%',
             overflow: 'hidden'
         }}>
-            <Box sx={{ mb: 3, mx: 2, mt: 2, flexShrink: 0 }}>
+            {/* Organisations-Kontext-Auswahl (nur eigene Orgs!) */}
+            <Box sx={{ mx: 2, mt: 2, mb: 1, flexShrink: 0 }}>
+                <Card elevation={0} sx={{
+                    p: 2,
+                    background: 'linear-gradient(135deg, rgba(255, 152, 0, 0.08) 0%, rgba(255, 255, 255, 1) 100%)',
+                    border: '1px solid rgba(255, 152, 0, 0.2)',
+                    borderRadius: 3,
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <BusinessIcon sx={{ color: '#FF9800', fontSize: 28 }} />
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                Meine Organisation (Kontext wechseln)
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                select
+                                size="small"
+                                value={contextOrgUuid}
+                                onChange={(e) => handleContextOrgChange(e.target.value)}
+                                SelectProps={{ native: true }}
+                                sx={{
+                                    mt: 0.5,
+                                    '& .MuiOutlinedInput-root': {
+                                        backgroundColor: 'white',
+                                        fontWeight: 600,
+                                    },
+                                }}
+                            >
+                                {myOrganisations.length === 0 && <option value="">Keine Organisationen zugewiesen</option>}
+                                {myOrganisations.map((org) => {
+                                    const orgId = org.orgUid || org.orgUuid || org.uuid || org.id || '';
+                                    return (
+                                        <option key={orgId} value={orgId}>
+                                            {org.orgName || org.label || orgId}
+                                        </option>
+                                    );
+                                })}
+                            </TextField>
+                        </Box>
+                    </Box>
+                </Card>
+            </Box>
+
+            <Box sx={{ mb: 3, mx: 2, mt: 1, flexShrink: 0 }}>
                 <Card
                     elevation={0}
                     sx={{
@@ -1045,6 +1132,7 @@ const Benutzerliste = () => {
                 onClose={handleCloseForm}
                 onSuccess={handleFormSuccess}
                 editUser={editingUser}
+                contextOrgUuid={contextOrgUuid}
             />
         </Box>
     );

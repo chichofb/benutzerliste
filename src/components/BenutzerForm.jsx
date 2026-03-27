@@ -37,7 +37,7 @@ import userService from '../services/mockUserService';  // Mock-Daten für lokal
  * @param {Function} onSuccess - Callback wenn Benutzer erfolgreich gespeichert wurde
  * @param {Object} editUser - Benutzer-Objekt zum Bearbeiten (null für neuen Benutzer)
  */
-const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
+const BenutzerForm = ({ open, onClose, onSuccess, editUser = null, contextOrgUuid = '' }) => {
     // ========== STATE-VERWALTUNG ==========
 
     // Formular-Daten
@@ -227,10 +227,10 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
             // Entscheiden ob Create oder Update
             if (editUser && editUser.userUid) {
                 // Update bestehender Benutzer
-                await userService.updateUser(formData);
+                await userService.updateUser(formData, contextOrgUuid);
             } else {
                 // Neuen Benutzer erstellen
-                await userService.createUser(formData);
+                await userService.createUser(formData, contextOrgUuid);
             }
 
             setSuccess(true);

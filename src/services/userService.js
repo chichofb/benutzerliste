@@ -90,38 +90,30 @@ const userService = {
      * @param {string} searchParams.roleName - Rollenname zum Filtern
      * @returns {Promise} Promise mit Benutzerdaten vom Server
      */
-    getUsers: async (searchParams = {}) => {
+    getUsers: async (searchParams = {}, contextOrgUuid = '') => {
         try {
-            // Query-Parameter als flache Struktur vorbereiten
-            const params = {};
+            const body = {
+                searchMode: 'SUBSTRING'
+            };
 
-            // Suchbegriff für Username/Nachname
             if (searchParams.searchUsernameOrLastname) {
-                params.searchUsernameOrLastname = searchParams.searchUsernameOrLastname;
-                params.searchMode = 'SUBSTRING';
+                body.searchUsernameOrLastname = searchParams.searchUsernameOrLastname;
             }
 
-            // Organisation UID
             if (searchParams.orgUid) {
-                params.orgUid = searchParams.orgUid;
+                body.orgUid = searchParams.orgUid;
             }
 
-            // Rollen-Filter
-            if (searchParams.roleName) {
-                params.roleName = searchParams.roleName;
+            if (searchParams.roleIds && searchParams.roleIds.length > 0) {
+                body.roleIds = searchParams.roleIds;
             }
 
-            console.log('Sending request to /api/users with params:', params);
-
-            // GET-Request an /api/users mit Query-Parametern
-            const response = await axiosInstance.get('/users', { params });
-
-            console.log('Received response:', response.data);
-            return response.data;  // Gibt die Benutzerliste zurück
+            const queryParams = contextOrgUuid ? `?contextOrgUuid=${encodeURIComponent(contextOrgUuid)}` : '';
+            const response = await axiosInstance.post(`/users/list${queryParams}`, body);
+            return response.data;
         } catch (error) {
-            console.error('Fehler beim Abrufen der Benutzer:', error);
-            console.error('Request params were:', searchParams);
-            throw error;  // Fehler wird an aufrufende Komponente weitergegeben
+            console.error('Fehler beim Abrufen der Benutzer:', error.response?.status, error.response?.data);
+            throw error;
         }
     },
 
@@ -136,6 +128,20 @@ const userService = {
             return response.data.options || [];  // API gibt { options: [...] } zurück
         } catch (error) {
             console.error('Fehler beim Abrufen der Rollen:', error);
+            throw error;
+        }
+    },
+
+    /**
+    * Eigene Organisationen des eingeloggten Users abrufen
+    * @returns {Promise} Promise mit Liste der eigenen Organisationen
+    */
+    getMyOrganisations: async () => {
+        try {
+            const response = await axiosInstance.get('/me/organisations/select');
+            return response.data.options || [];
+        } catch (error) {
+            console.error('Fehler beim Abrufen der eigenen Organisationen:', error);
             throw error;
         }
     },
@@ -190,11 +196,11 @@ const userService = {
      * @param {string} userUid - Eindeutige Benutzer-ID (UUID)
      * @returns {Promise} Promise mit Benutzerdetails
      */
-    getUserById: async (userUid) => {
+    getUserById: async (userUid, contextOrgUuid = '') => {
         try {
-            // GET-Request an /api/users/{userUid}
-            const response = await axiosInstance.get(`/users/${userUid}`);
-            return response.data;  // Gibt detaillierte Benutzerdaten zurück
+            const queryParams = contextOrgUuid ? `?contextOrgUuid=${encodeURIComponent(contextOrgUuid)}` : '';
+            const response = await axiosInstance.get(`/users/${userUid}${queryParams}`);
+            return response.data;
         } catch (error) {
             console.error(`Fehler beim Abrufen von Benutzer ${userUid}:`, error);
             throw error;
@@ -206,18 +212,13 @@ const userService = {
      * @param {Object} userData - Benutzerdaten (firstname, lastname, email, etc.)
      * @returns {Promise} Promise mit dem erstellten Benutzer
      */
-    createUser: async (userData) => {
+    createUser: async (userData, contextOrgUuid = '') => {
         try {
-            console.log('Sending POST request to /users with data:', userData);
-            // POST-Request an /api/users mit Benutzerdaten im Body
-            const response = await axiosInstance.post('/users', userData);
-            console.log('Create user response:', response);
-            return response.data;  // Gibt den neu erstellten Benutzer zurück
+            const queryParams = contextOrgUuid ? `?contextOrgUuid=${encodeURIComponent(contextOrgUuid)}` : '';
+            const response = await axiosInstance.post(`/users${queryParams}`, userData);
+            return response.data;
         } catch (error) {
-            console.error('Fehler beim Erstellen des Benutzers:', error);
-            console.error('Error response:', error.response);
-            console.error('Error status:', error.response?.status);
-            console.error('Error data:', error.response?.data);
+            console.error('Fehler beim Erstellen des Benutzers:', error.response?.status, error.response?.data);
             throw error;
         }
     },
@@ -227,22 +228,16 @@ const userService = {
      * @param {Object} userData - Aktualisierte Benutzerdaten (muss userUid enthalten)
      * @returns {Promise} Promise mit dem aktualisierten Benutzer
      */
-    updateUser: async (userData) => {
+    updateUser: async (userData, contextOrgUuid = '') => {
         try {
             if (!userData.userUid) {
                 throw new Error('userUid ist erforderlich für Update-Operation');
             }
-
-            console.log('Updating user with userUid:', userData.userUid);
-            console.log('Update payload:', userData);
-
-            // PUT-Request an /api/users/{userUid} mit Benutzerdaten
-            const response = await axiosInstance.put(`/users/${userData.userUid}`, userData);
-            console.log('Update response:', response);
-            return response.data;  // Gibt den aktualisierten Benutzer zurück
+            const queryParams = contextOrgUuid ? `?contextOrgUuid=${encodeURIComponent(contextOrgUuid)}` : '';
+            const response = await axiosInstance.put(`/users/${userData.userUid}${queryParams}`, userData);
+            return response.data;
         } catch (error) {
-            console.error('Fehler beim Aktualisieren des Benutzers:', error);
-            console.error('Error response:', error.response);
+            console.error('Fehler beim Aktualisieren des Benutzers:', error.response?.status, error.response?.data);
             throw error;
         }
     },

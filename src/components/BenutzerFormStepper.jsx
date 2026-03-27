@@ -57,7 +57,7 @@ import userService from '../services/userService';  // Echter userService für B
 
 const steps = ['Organisationen', 'Rollen zuweisen', 'Persönliche Daten', 'Übersicht'];
 
-const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
+const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null, contextOrgUuid = '' }) => {
     // ========== STATE-VERWALTUNG ==========
 
     // Aktueller Schritt (0-3)
@@ -365,9 +365,9 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
             console.log('Final Payload:', JSON.stringify(payload, null, 2));
 
             if (editUser) {
-                await userService.updateUser(payload);
+                await userService.updateUser(payload, contextOrgUuid);
             } else {
-                await userService.createUser(payload);
+                await userService.createUser(payload, contextOrgUuid);
             }
 
             onSuccess();
