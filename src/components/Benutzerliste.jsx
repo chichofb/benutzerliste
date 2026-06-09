@@ -107,13 +107,14 @@ const Benutzerliste = () => {
             setMyOrganisations(myOrgs);
 
             // 2. Erste eigene Org direkt als Kontext verwenden
-            const firstOrgId = myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
+            const firstOrgId = myOrgs[0].orgUuid || myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
+            console.log('Erste Org-Objekt:', myOrgs[0], '→ firstOrgId:', firstOrgId);
             setContextOrgUuid(firstOrgId);
             setServiceContextOrgUuid(firstOrgId);
 
             // 3. Benutzerliste mit dieser Org laden
             try {
-                const response = await userService.getUsers({});
+                const response = await userService.getUsers({}, firstOrgId);
                 setUsers(extractUsers(response));
             } catch (err) {
                 const data = err.response?.data;
@@ -161,7 +162,7 @@ const Benutzerliste = () => {
             if (orgUuid) searchParams.orgUuid = orgUuid;
             if (roleId) searchParams.roleIds = [roleId];
 
-            const response = await userService.getUsers(searchParams);
+            const response = await userService.getUsers(searchParams, ctxOrgUuid);
 
             const userArray = extractUsers(response);
             setUsers(userArray);

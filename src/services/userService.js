@@ -64,10 +64,6 @@ axiosInstance.interceptors.request.use(
             // Bearer Token zu Authorization-Header hinzufügen
             config.headers.Authorization = `Bearer ${keycloakInstance.token}`;
         }
-        // contextOrgUuid als Header mitsenden (falls vorhanden)
-        if (storedContextOrgUuid) {
-            config.headers['contextOrgUuid'] = storedContextOrgUuid;
-        }
         return config;
     },
     (error) => {
@@ -108,7 +104,7 @@ const userService = {
      * @param {string} searchParams.roleName - Rollenname zum Filtern
      * @returns {Promise} Promise mit Benutzerdaten vom Server
      */
-    getUsers: async (searchParams = {}) => {
+    getUsers: async (searchParams = {}, contextOrgUuid = '') => {
         try {
             const body = {
                 searchMode: 'SUBSTRING'
@@ -126,7 +122,10 @@ const userService = {
                 body.roleIds = searchParams.roleIds;
             }
 
-            const response = await axiosInstance.post('/users/list', body);
+            // contextOrgUuid: direkt übergeben oder aus storedContextOrgUuid (Interceptor)
+            const ctxUuid = contextOrgUuid || storedContextOrgUuid;
+            const queryParams = ctxUuid ? `?contextOrgUuid=${encodeURIComponent(ctxUuid)}` : '';
+            const response = await axiosInstance.post(`/users/list${queryParams}`, body);
             return response.data;
         } catch (error) {
             console.error('Fehler beim Abrufen der Benutzer:', error.response?.status, error.response?.data);
