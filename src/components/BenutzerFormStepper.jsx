@@ -57,7 +57,7 @@ import userService from '../services/userService';  // Echter userService für B
 
 const steps = ['Organisationen', 'Rollen zuweisen', 'Persönliche Daten', 'Übersicht'];
 
-const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null, contextOrgUuid = '' }) => {
+const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
     // ========== STATE-VERWALTUNG ==========
 
     // Aktueller Schritt (0-3)

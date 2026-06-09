@@ -28,7 +28,7 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as VisibilityIcon, Search as SearchIcon, Close as CloseIcon, Add as AddIcon, FilterList as FilterListIcon, Business as BusinessIcon, AccountCircle as AccountCircleIcon, ViewModule as ViewModuleIcon, ViewList as ViewListIcon } from '@mui/icons-material';
 import { useKeycloak } from '@react-keycloak/web';
-import userService, { setKeycloakInstance } from '../services/userService';
+import userService, { setKeycloakInstance, setContextOrgUuid as setServiceContextOrgUuid } from '../services/userService';
 import BenutzerDetail from './BenutzerDetail';
 import BenutzerFormStepper from './BenutzerFormStepper';
 
@@ -109,10 +109,11 @@ const Benutzerliste = () => {
             // 2. Erste eigene Org direkt als Kontext verwenden
             const firstOrgId = myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
             setContextOrgUuid(firstOrgId);
+            setServiceContextOrgUuid(firstOrgId);
 
             // 3. Benutzerliste mit dieser Org laden
             try {
-                const response = await userService.getUsers({}, firstOrgId);
+                const response = await userService.getUsers({});
                 setUsers(extractUsers(response));
             } catch (err) {
                 const data = err.response?.data;
@@ -143,6 +144,7 @@ const Benutzerliste = () => {
     // Organisations-Kontext wechseln → Benutzer neu laden
     const handleContextOrgChange = (newOrgUuid) => {
         setContextOrgUuid(newOrgUuid);
+        setServiceContextOrgUuid(newOrgUuid);
         setPage(0);
         if (newOrgUuid) fetchUsersWithContext(newOrgUuid, searchTerm, organisationFilter, roleFilter);
     };
@@ -159,7 +161,7 @@ const Benutzerliste = () => {
             if (orgUuid) searchParams.orgUuid = orgUuid;
             if (roleId) searchParams.roleIds = [roleId];
 
-            const response = await userService.getUsers(searchParams, ctxOrgUuid);
+            const response = await userService.getUsers(searchParams);
 
             const userArray = extractUsers(response);
             setUsers(userArray);
@@ -1132,7 +1134,6 @@ const Benutzerliste = () => {
                 onClose={handleCloseForm}
                 onSuccess={handleFormSuccess}
                 editUser={editingUser}
-                contextOrgUuid={contextOrgUuid}
             />
         </Box>
     );

@@ -16,6 +16,13 @@ const API_BASE_URL = 'http://localhost:8080/api';
 // Variable für Keycloak-Instanz (wird von außen gesetzt)
 let keycloakInstance = null;
 
+// contextOrgUuid: wird vom Backend als Response-Header geschickt und bei jedem Request mitgesendet
+let storedContextOrgUuid = '';
+
+export const setContextOrgUuid = (uuid) => {
+    storedContextOrgUuid = uuid;
+};
+
 /**
  * Keycloak-Instanz setzen
  * Diese Methode muss beim App-Start aufgerufen werden
@@ -57,6 +64,10 @@ axiosInstance.interceptors.request.use(
             // Bearer Token zu Authorization-Header hinzufügen
             config.headers.Authorization = `Bearer ${keycloakInstance.token}`;
         }
+        // contextOrgUuid als Header mitsenden (falls vorhanden)
+        if (storedContextOrgUuid) {
+            config.headers['contextOrgUuid'] = storedContextOrgUuid;
+        }
         return config;
     },
     (error) => {
@@ -65,10 +76,17 @@ axiosInstance.interceptors.request.use(
 );
 
 /**
- * Response Interceptor: Behandelt 401-Fehler (nicht autorisiert)
+ * Response Interceptor: Liest contextOrgUuid aus Response-Header und behandelt 401-Fehler
  */
 axiosInstance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // contextOrgUuid aus Response-Header lesen (Axios gibt Header lowercase zurück)
+        const headerValue = response.headers['contextorguuid'];
+        if (headerValue) {
+            storedContextOrgUuid = headerValue;
+        }
+        return response;
+    },
     (error) => {
         if (error.response?.status === 401 && keycloakInstance) {
             // Bei 401 Fehler: Benutzer zur Anmeldung weiterleiten
@@ -90,7 +108,7 @@ const userService = {
      * @param {string} searchParams.roleName - Rollenname zum Filtern
      * @returns {Promise} Promise mit Benutzerdaten vom Server
      */
-    getUsers: async (searchParams = {}, contextOrgUuid = '') => {
+    getUsers: async (searchParams = {}) => {
         try {
             const body = {
                 searchMode: 'SUBSTRING'
@@ -100,17 +118,15 @@ const userService = {
                 body.searchUsernameOrLastname = searchParams.searchUsernameOrLastname;
             }
 
-            // orgUuid aus searchParams oder contextOrgUuid als Fallback
-            const orgUuid = searchParams.orgUuid || contextOrgUuid;
-            if (orgUuid) {
-                body.orgUuid = orgUuid;
+            if (searchParams.orgUuid) {
+                body.orgUuid = searchParams.orgUuid;
             }
 
             if (searchParams.roleIds && searchParams.roleIds.length > 0) {
                 body.roleIds = searchParams.roleIds;
             }
 
-            const response = await axiosInstance.get('/users/list', { data: body });
+            const response = await axiosInstance.post('/users/list', body);
             return response.data;
         } catch (error) {
             console.error('Fehler beim Abrufen der Benutzer:', error.response?.status, error.response?.data);

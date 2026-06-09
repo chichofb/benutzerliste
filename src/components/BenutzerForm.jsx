@@ -37,7 +37,7 @@ import userService from '../services/mockUserService';  // Mock-Daten für lokal
  * @param {Function} onSuccess - Callback wenn Benutzer erfolgreich gespeichert wurde
  * @param {Object} editUser - Benutzer-Objekt zum Bearbeiten (null für neuen Benutzer)
  */
-const BenutzerForm = ({ open, onClose, onSuccess, editUser = null, contextOrgUuid = '' }) => {
+const BenutzerForm = ({ open, onClose, onSuccess, editUser = null }) => {
     // ========== STATE-VERWALTUNG ==========
 
     // Formular-Daten
