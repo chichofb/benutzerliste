@@ -108,7 +108,6 @@ const Benutzerliste = () => {
 
             // 2. Erste eigene Org direkt als Kontext verwenden
             const firstOrgId = myOrgs[0].orgUuid || myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
-            console.log('Erste Org-Objekt:', myOrgs[0], '→ firstOrgId:', firstOrgId);
             setContextOrgUuid(firstOrgId);
             setServiceContextOrgUuid(firstOrgId);
 
