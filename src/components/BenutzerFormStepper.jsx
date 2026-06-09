@@ -169,7 +169,7 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null, contex
 
         // Persönliche Daten laden
         setPersonalData({
-            userUid: editUser.userUid || '',
+            userUuid: editUser.userUuid || '',
             username: editUser.username || '',
             firstName: editUser.firstName || '',
             lastName: editUser.lastName || '',
@@ -352,22 +352,22 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null, contex
                 mail: personalData.mail,
                 phone: personalData.phone || '',
                 organisations: selectedOrganisations.map(org => ({
-                    orgUid: org.id,
+                    orgUuid: org.id,
                     roles: (organisationRoles[org.id] || []).map(roleId => ({ roleId }))
                 }))
             };
 
-            // Bei Edit: userUid hinzufügen
-            if (editUser && personalData.userUid) {
-                payload.userUid = personalData.userUid;
+            // Bei Edit: userUuid hinzufügen
+            if (editUser && personalData.userUuid) {
+                payload.userUuid = personalData.userUuid;
             }
 
             console.log('Final Payload:', JSON.stringify(payload, null, 2));
 
             if (editUser) {
-                await userService.updateUser(payload, contextOrgUuid);
+                await userService.updateUser(payload);
             } else {
-                await userService.createUser(payload, contextOrgUuid);
+                await userService.createUser(payload);
             }
 
             onSuccess();

@@ -76,7 +76,7 @@ const Benutzerliste = () => {
             const firstKey = Object.keys(response._embedded)[0];
             if (firstKey && Array.isArray(response._embedded[firstKey])) return response._embedded[firstKey];
         }
-        if (response.userUid) return [response];
+        if (response.userUuid) return [response];
         return [];
     };
 
@@ -148,7 +148,7 @@ const Benutzerliste = () => {
     };
 
     // Benutzer mit contextOrgUuid laden
-    const fetchUsersWithContext = async (ctxOrgUuid, nameSearch = '', orgUid = '', roleId = '') => {
+    const fetchUsersWithContext = async (ctxOrgUuid, nameSearch = '', orgUuid = '', roleId = '') => {
         if (!ctxOrgUuid) return;
         setLoading(true);
         setError(null);
@@ -156,7 +156,7 @@ const Benutzerliste = () => {
         try {
             const searchParams = {};
             if (nameSearch) searchParams.searchUsernameOrLastname = nameSearch;
-            if (orgUid) searchParams.orgUid = orgUid;
+            if (orgUuid) searchParams.orgUuid = orgUuid;
             if (roleId) searchParams.roleIds = [roleId];
 
             const response = await userService.getUsers(searchParams, ctxOrgUuid);
@@ -174,8 +174,8 @@ const Benutzerliste = () => {
     };
 
     // Server-Side-Filtering: Verarbeitet HAL, Array und Content-Formate
-    const fetchUsers = async (nameSearch = '', orgUid = '', roleId = '') => {
-        fetchUsersWithContext(contextOrgUuid, nameSearch, orgUid, roleId);
+    const fetchUsers = async (nameSearch = '', orgUuid = '', roleId = '') => {
+        fetchUsersWithContext(contextOrgUuid, nameSearch, orgUuid, roleId);
     };
 
     const fetchRoles = async () => {
@@ -203,10 +203,10 @@ const Benutzerliste = () => {
     };
 
     const handleOrganisationFilter = (e) => {
-        const orgUid = e.target.value;
-        setOrganisationFilter(orgUid);
+        const orgUuid = e.target.value;
+        setOrganisationFilter(orgUuid);
         setPage(0);
-        fetchUsers(searchTerm, orgUid, roleFilter);
+        fetchUsers(searchTerm, orgUuid, roleFilter);
     };
 
     const handleRoleFilter = (e) => {
@@ -219,7 +219,7 @@ const Benutzerliste = () => {
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
     const handleViewDetails = async (userId) => {
         try {
-            const response = await userService.getUserById(userId, contextOrgUuid);
+            const response = await userService.getUserById(userId);
             setSelectedUser(response.content || response);
             setDetailOpen(true);
         } catch (err) {
@@ -245,7 +245,7 @@ const Benutzerliste = () => {
     const handleConfirmDelete = async () => {
         try {
             await userService.deleteUser(deleteTargetId);
-            setUsers(users.filter(user => user.userUid !== deleteTargetId));
+            setUsers(users.filter(user => user.userUuid !== deleteTargetId));
             handleCloseDeleteDialog();
             setError(null);
         } catch (err) {
@@ -615,7 +615,7 @@ const Benutzerliste = () => {
 
                                     return (
                                         <Card
-                                            key={user.userUid}
+                                            key={user.userUuid}
                                             elevation={0}
                                             sx={{
                                                 p: 3,
@@ -634,7 +634,7 @@ const Benutzerliste = () => {
                                                     borderColor: 'rgba(65, 105, 225, 0.3)',
                                                 },
                                             }}
-                                            onClick={() => handleViewDetails(user.userUid)}
+                                            onClick={() => handleViewDetails(user.userUuid)}
                                         >
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                                 <Box sx={{
@@ -783,7 +783,7 @@ const Benutzerliste = () => {
                                                     startIcon={<VisibilityIcon />}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleViewDetails(user.userUid);
+                                                        handleViewDetails(user.userUuid);
                                                     }}
                                                     sx={{
                                                         flex: 1,
@@ -822,7 +822,7 @@ const Benutzerliste = () => {
                                                     size="small"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleOpenDeleteDialog(user.userUid);
+                                                        handleOpenDeleteDialog(user.userUuid);
                                                     }}
                                                     sx={{
                                                         minWidth: 'auto',
@@ -890,7 +890,7 @@ const Benutzerliste = () => {
 
                                                 return (
                                                     <TableRow
-                                                        key={user.userUid}
+                                                        key={user.userUuid}
                                                         sx={{
                                                             transition: 'all 0.2s ease',
                                                             '&:hover': {
@@ -996,7 +996,7 @@ const Benutzerliste = () => {
                                                                 <Tooltip title="Details">
                                                                     <Button
                                                                         size="small"
-                                                                        onClick={() => handleViewDetails(user.userUid)}
+                                                                        onClick={() => handleViewDetails(user.userUuid)}
                                                                         sx={{
                                                                             minWidth: 'auto',
                                                                             px: 1.5,
@@ -1032,7 +1032,7 @@ const Benutzerliste = () => {
                                                                 <Tooltip title="Löschen">
                                                                     <Button
                                                                         size="small"
-                                                                        onClick={() => handleOpenDeleteDialog(user.userUid)}
+                                                                        onClick={() => handleOpenDeleteDialog(user.userUuid)}
                                                                         sx={{
                                                                             minWidth: 'auto',
                                                                             px: 1.5,

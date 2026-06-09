@@ -132,7 +132,7 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null, contextOrgUui
                 : null;
 
             setFormData({
-                userUid: editUser.userUid || '',
+                userUuid: editUser.userUuid || '',
                 username: editUser.username || '',
                 firstName: editUser.firstName || '',
                 lastName: editUser.lastName || '',
@@ -225,12 +225,12 @@ const BenutzerForm = ({ open, onClose, onSuccess, editUser = null, contextOrgUui
 
         try {
             // Entscheiden ob Create oder Update
-            if (editUser && editUser.userUid) {
+            if (editUser && editUser.userUuid) {
                 // Update bestehender Benutzer
-                await userService.updateUser(formData, contextOrgUuid);
+                await userService.updateUser(formData);
             } else {
                 // Neuen Benutzer erstellen
-                await userService.createUser(formData, contextOrgUuid);
+                await userService.createUser(formData);
             }
 
             setSuccess(true);
