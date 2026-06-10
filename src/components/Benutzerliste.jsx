@@ -75,18 +75,28 @@ const Benutzerliste = () => {
 
     // User-Array aus verschiedenen Response-Formaten extrahieren
     const extractUsers = (response) => {
-        if (Array.isArray(response)) return response;
+        const normalizeUsers = (list) => {
+            if (!Array.isArray(list)) return [];
+            return list.map((user) => ({
+                ...user,
+                userUuid: user?.userUuid || user?.userUid || null,
+            }));
+        };
+
+        if (Array.isArray(response)) return normalizeUsers(response);
         if (!response || typeof response !== 'object') return [];
-        if (Array.isArray(response.content)) return response.content;
-        if (Array.isArray(response.data)) return response.data;
-        if (Array.isArray(response.users)) return response.users;
-        if (Array.isArray(response.items)) return response.items;
-        if (Array.isArray(response.list)) return response.list;
+        if (Array.isArray(response.content)) return normalizeUsers(response.content);
+        if (Array.isArray(response.data)) return normalizeUsers(response.data);
+        if (Array.isArray(response.users)) return normalizeUsers(response.users);
+        if (Array.isArray(response.items)) return normalizeUsers(response.items);
+        if (Array.isArray(response.list)) return normalizeUsers(response.list);
         if (response._embedded) {
             const firstKey = Object.keys(response._embedded)[0];
-            if (firstKey && Array.isArray(response._embedded[firstKey])) return response._embedded[firstKey];
+            if (firstKey && Array.isArray(response._embedded[firstKey])) {
+                return normalizeUsers(response._embedded[firstKey]);
+            }
         }
-        if (response.userUuid) return [response];
+        if (response.userUuid || response.userUid) return normalizeUsers([response]);
         return [];
     };
 
@@ -230,6 +240,12 @@ const Benutzerliste = () => {
 
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
     const handleViewDetails = async (userId) => {
+        if (!userId) {
+            setError('Benutzer-ID fehlt. Die Liste wird neu geladen.');
+            fetchUsers(searchTerm, organisationFilter, roleFilter);
+            return;
+        }
+
         try {
             const response = await userService.getUserById(userId);
             setSelectedUser(response.content || response);

@@ -66,7 +66,7 @@ axiosInstance.interceptors.request.use(
         }
         // contextOrgUuid als Request-Header mitsenden (falls vorhanden)
         if (storedContextOrgUuid) {
-            config.headers['contextOrgUuid'] = storedContextOrgUuid;
+            config.headers['ignrw-context-org'] = storedContextOrgUuid;
         }
         return config;
     },
@@ -210,7 +210,7 @@ const userService = {
 
     /**
      * Einzelnen Benutzer anhand der UUID abrufen
-     * @param {string} userUid - Eindeutige Benutzer-ID (UUID)
+    * @param {string} userUuid - Eindeutige Benutzer-ID (UUID)
      * @returns {Promise} Promise mit Benutzerdetails
      */
     getUserById: async (userUuid) => {
@@ -218,7 +218,7 @@ const userService = {
             const response = await axiosInstance.get(`/users/${userUuid}`);
             return response.data;
         } catch (error) {
-            console.error(`Fehler beim Abrufen von Benutzer ${userUid}:`, error);
+            console.error(`Fehler beim Abrufen von Benutzer ${userUuid}:`, error);
             throw error;
         }
     },
