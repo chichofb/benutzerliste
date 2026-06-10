@@ -245,7 +245,18 @@ const Benutzerliste = () => {
     };
 
     const handleViewDetails = async (userOrId) => {
-        const userId = resolveUserUuid(userOrId);
+        let userId = resolveUserUuid(userOrId);
+
+        if (!userId && typeof userOrId === 'object' && userOrId?.username) {
+            try {
+                const lookup = await userService.getUsers({ username: userOrId.username }, contextOrgUuid);
+                const lookupUsers = extractUsers(lookup);
+                const exactMatch = lookupUsers.find((user) => user.username === userOrId.username);
+                userId = resolveUserUuid(exactMatch);
+            } catch {
+                // Fehler wird unten über die Standardmeldung behandelt
+            }
+        }
 
         if (!userId) {
             setError('Benutzer-ID fehlt. Details konnten nicht geladen werden.');

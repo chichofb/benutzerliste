@@ -114,6 +114,14 @@ const userService = {
                 searchMode: 'SUBSTRING'
             };
 
+            if (searchParams.username) {
+                body.username = searchParams.username;
+            }
+
+            if (searchParams.userUuid) {
+                body.userUuid = searchParams.userUuid;
+            }
+
             if (searchParams.searchUsernameOrLastname) {
                 body.searchUsernameOrLastname = searchParams.searchUsernameOrLastname;
             }
