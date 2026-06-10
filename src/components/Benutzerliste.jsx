@@ -253,19 +253,33 @@ const Benutzerliste = () => {
         if (typeof userOrId === 'string') return userOrId;
         if (!userOrId || typeof userOrId !== 'object') return '';
 
-        return userOrId.userUuid
+        // UUID aus direkten Feldern
+        const direct = userOrId.userUuid
             || userOrId.userUid
             || userOrId?.user?.userUuid
             || userOrId?.user?.userUid
             || userOrId?.content?.userUuid
             || userOrId?.content?.userUid
             || userOrId?.item?.userUuid
-            || userOrId?.item?.userUid
+            || userOrId?.item?.userUid;
+        if (direct) return direct;
+
+        // UUID aus HAL-Links extrahieren (z.B. links.self = "/api/users/uuid-hier")
+        const selfHref = userOrId?.links?.self?.href
+            || userOrId?._links?.self?.href
+            || (Array.isArray(userOrId?.links) && userOrId.links.find(l => l.rel === 'self')?.href)
             || '';
+        if (selfHref) {
+            const match = selfHref.match(/\/users\/([^/?#]+)/);
+            if (match) return match[1];
+        }
+
+        return '';
     };
 
     const handleViewDetails = async (userOrId) => {
         let userId = resolveUserUuid(userOrId);
+        console.log('[handleViewDetails] resolved userId:', userId, '| links:', userOrId?.links || userOrId?._links);
 
         const username = typeof userOrId === 'object' ? resolveUsername(userOrId) : '';
 
