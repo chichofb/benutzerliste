@@ -79,7 +79,7 @@ const Benutzerliste = () => {
             if (!Array.isArray(list)) return [];
             return list.map((user) => ({
                 ...user,
-                userUuid: user?.userUuid || user?.userUid || null,
+                userUuid: user?.userUuid || user?.userUid || user?.uuid || user?.id || null,
             }));
         };
 
@@ -239,7 +239,11 @@ const Benutzerliste = () => {
     };
 
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
-    const handleViewDetails = async (userId) => {
+    const handleViewDetails = async (userOrId) => {
+        const userId = typeof userOrId === 'string'
+            ? userOrId
+            : userOrId?.userUuid || userOrId?.userUid || userOrId?.uuid || userOrId?.id;
+
         if (!userId) {
             setError('Benutzer-ID fehlt. Die Liste wird neu geladen.');
             fetchUsers(searchTerm, organisationFilter, roleFilter);
@@ -768,7 +772,7 @@ const Benutzerliste = () => {
                                                     borderColor: 'rgba(65, 105, 225, 0.3)',
                                                 },
                                             }}
-                                            onClick={() => handleViewDetails(user.userUuid)}
+                                            onClick={() => handleViewDetails(user)}
                                         >
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                                 <Box sx={{
@@ -917,7 +921,7 @@ const Benutzerliste = () => {
                                                     startIcon={<VisibilityIcon />}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleViewDetails(user.userUuid);
+                                                        handleViewDetails(user);
                                                     }}
                                                     sx={{
                                                         flex: 1,
@@ -1130,7 +1134,7 @@ const Benutzerliste = () => {
                                                                 <Tooltip title="Details">
                                                                     <Button
                                                                         size="small"
-                                                                        onClick={() => handleViewDetails(user.userUuid)}
+                                                                        onClick={() => handleViewDetails(user)}
                                                                         sx={{
                                                                             minWidth: 'auto',
                                                                             px: 1.5,
