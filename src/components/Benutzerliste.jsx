@@ -79,7 +79,7 @@ const Benutzerliste = () => {
             if (!Array.isArray(list)) return [];
             return list.map((user) => ({
                 ...user,
-                userUuid: user?.userUuid || user?.userUid || user?.uuid || user?.id || null,
+                userUuid: user?.userUuid || user?.userUid || null,
             }));
         };
 
@@ -239,14 +239,16 @@ const Benutzerliste = () => {
     };
 
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
+    const resolveUserUuid = (userOrId) => {
+        if (typeof userOrId === 'string') return userOrId;
+        return userOrId?.userUuid || userOrId?.userUid || '';
+    };
+
     const handleViewDetails = async (userOrId) => {
-        const userId = typeof userOrId === 'string'
-            ? userOrId
-            : userOrId?.userUuid || userOrId?.userUid || userOrId?.uuid || userOrId?.id;
+        const userId = resolveUserUuid(userOrId);
 
         if (!userId) {
-            setError('Benutzer-ID fehlt. Die Liste wird neu geladen.');
-            fetchUsers(searchTerm, organisationFilter, roleFilter);
+            setError('Benutzer-ID fehlt. Details konnten nicht geladen werden.');
             return;
         }
 
@@ -747,13 +749,14 @@ const Benutzerliste = () => {
                                     </Typography>
                                 </Box>
                             ) : (
-                                displayedUsers.map((user) => {
+                                displayedUsers.map((user, index) => {
                                     const activeOrgs = user.organisations?.filter(org => !org.deleted) || [];
                                     const initials = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`;
+                                    const rowKey = `${resolveUserUuid(user) || user.username || 'user'}-${page * rowsPerPage + index}`;
 
                                     return (
                                         <Card
-                                            key={user.userUuid}
+                                            key={rowKey}
                                             elevation={0}
                                             sx={{
                                                 p: 3,
@@ -1022,13 +1025,14 @@ const Benutzerliste = () => {
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            displayedUsers.map((user) => {
+                                            displayedUsers.map((user, index) => {
                                                 const activeOrgs = user.organisations?.filter(org => !org.deleted) || [];
                                                 const initials = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`;
+                                                const rowKey = `${resolveUserUuid(user) || user.username || 'user'}-${page * rowsPerPage + index}`;
 
                                                 return (
                                                     <TableRow
-                                                        key={user.userUuid}
+                                                        key={rowKey}
                                                         sx={{
                                                             transition: 'all 0.2s ease',
                                                             '&:hover': {
