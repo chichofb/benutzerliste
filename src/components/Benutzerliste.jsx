@@ -77,10 +77,15 @@ const Benutzerliste = () => {
     const extractUsers = (response) => {
         const normalizeUsers = (list) => {
             if (!Array.isArray(list)) return [];
-            return list.map((user) => ({
-                ...user,
-                userUuid: user?.userUuid || user?.userUid || null,
-            }));
+            return list.map((user) => {
+                const nestedUser = user?.user || user?.content || user?.item || {};
+                return {
+                    ...nestedUser,
+                    ...user,
+                    username: user?.username || nestedUser?.username || '',
+                    userUuid: user?.userUuid || user?.userUid || nestedUser?.userUuid || nestedUser?.userUid || null,
+                };
+            });
         };
 
         if (Array.isArray(response)) return normalizeUsers(response);
@@ -239,19 +244,36 @@ const Benutzerliste = () => {
     };
 
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
+    const resolveUsername = (user) => {
+        if (!user || typeof user !== 'object') return '';
+        return user.username || user?.user?.username || user?.content?.username || user?.item?.username || '';
+    };
+
     const resolveUserUuid = (userOrId) => {
         if (typeof userOrId === 'string') return userOrId;
-        return userOrId?.userUuid || userOrId?.userUid || '';
+        if (!userOrId || typeof userOrId !== 'object') return '';
+
+        return userOrId.userUuid
+            || userOrId.userUid
+            || userOrId?.user?.userUuid
+            || userOrId?.user?.userUid
+            || userOrId?.content?.userUuid
+            || userOrId?.content?.userUid
+            || userOrId?.item?.userUuid
+            || userOrId?.item?.userUid
+            || '';
     };
 
     const handleViewDetails = async (userOrId) => {
         let userId = resolveUserUuid(userOrId);
 
-        if (!userId && typeof userOrId === 'object' && userOrId?.username) {
+        const username = typeof userOrId === 'object' ? resolveUsername(userOrId) : '';
+
+        if (!userId && username) {
             try {
-                const lookup = await userService.getUsers({ username: userOrId.username }, contextOrgUuid);
+                const lookup = await userService.getUsers({ username }, contextOrgUuid);
                 const lookupUsers = extractUsers(lookup);
-                const exactMatch = lookupUsers.find((user) => user.username === userOrId.username);
+                const exactMatch = lookupUsers.find((user) => resolveUsername(user) === username);
                 userId = resolveUserUuid(exactMatch);
             } catch {
                 // Fehler wird unten über die Standardmeldung behandelt
