@@ -66,13 +66,13 @@ const Benutzerliste = () => {
     const [contextOrgUuid, setContextOrgUuid] = useState('');
     const [myOrganisations, setMyOrganisations] = useState([]);
     const searchTimerRef = useRef(null);
-    const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
-    const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-
-    const keycloakUser = keycloak?.tokenParsed || {};
-    const userFullName = [keycloakUser.given_name, keycloakUser.family_name].filter(Boolean).join(' ') || keycloakUser.preferred_username || 'Benutzer';
-    const userInitials = [keycloakUser.given_name?.charAt(0), keycloakUser.family_name?.charAt(0)].filter(Boolean).join('') || '?';
-
+        const [profileMenuAnchor, setProfileMenuAnchor] = useState(null);
+        const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+    
+        const keycloakUser = keycloak?.tokenParsed || {};
+        const userFullName = [keycloakUser.given_name, keycloakUser.family_name].filter(Boolean).join(' ') || keycloakUser.preferred_username || 'Benutzer';
+        const userInitials = [keycloakUser.given_name?.charAt(0), keycloakUser.family_name?.charAt(0)].filter(Boolean).join('') || '?';
+    
 
     // User-Array aus verschiedenen Response-Formaten extrahieren
     const extractUsers = (response) => {
@@ -117,10 +117,10 @@ const Benutzerliste = () => {
             // Eigene Orgs für Kontext-Switcher speichern
             setMyOrganisations(myOrgs);
 
-            // 2. Erste eigene Org direkt als Kontext verwenden
-            const firstOrgId = myOrgs[0].orgUuid || myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
-            setContextOrgUuid(firstOrgId);
-            setServiceContextOrgUuid(firstOrgId);
+              // 2. Erste eigene Org direkt als Kontext verwenden
+                        const firstOrgId = myOrgs[0].orgUuid || myOrgs[0].uuid || myOrgs[0].id || myOrgs[0].orgUid || '';
+                        setContextOrgUuid(firstOrgId);
+                        setServiceContextOrgUuid(firstOrgId);
 
             // 3. Benutzerliste mit dieser Org laden
             try {
@@ -153,13 +153,13 @@ const Benutzerliste = () => {
     }, [keycloak?.authenticated]);
 
     // Organisations-Kontext wechseln → Benutzer neu laden
-    // Organisations-Kontext wechseln → Benutzer neu laden
-    const handleContextOrgChange = (newOrgUuid) => {
-        setContextOrgUuid(newOrgUuid);
-        setServiceContextOrgUuid(newOrgUuid);
-        setPage(0);
-        if (newOrgUuid) fetchUsersWithContext(newOrgUuid, searchTerm, organisationFilter, roleFilter);
-    };
+       // Organisations-Kontext wechseln → Benutzer neu laden
+       const handleContextOrgChange = (newOrgUuid) => {
+           setContextOrgUuid(newOrgUuid);
+           setServiceContextOrgUuid(newOrgUuid);
+           setPage(0);
+           if (newOrgUuid) fetchUsersWithContext(newOrgUuid, searchTerm, organisationFilter, roleFilter);
+       };
 
     // Benutzer mit contextOrgUuid laden
     const fetchUsersWithContext = async (ctxOrgUuid, nameSearch = '', orgUuid = '', roleId = '') => {
@@ -302,119 +302,119 @@ const Benutzerliste = () => {
     }
 
     return (
-        <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100vh',
-            width: '100%',
-            overflow: 'hidden'
-        }}>
-            {/* Top-Leiste mit Profilbereich */}
             <Box sx={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                px: 3,
-                py: 1.5,
-                background: 'linear-gradient(135deg, #2E4CB8 0%, #4169E1 100%)',
-                boxShadow: '0 2px 8px rgba(65, 105, 225, 0.3)',
-                flexShrink: 0,
+                flexDirection: 'column',
+                height: '100vh',
+                width: '100%',
+                overflow: 'hidden'
             }}>
-                <Typography variant="h6" sx={{ color: 'white', fontWeight: 700, letterSpacing: 0.5 }}>
-                    Benutzerverwaltung
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-                        {userFullName}
+                {/* Top-Leiste mit Profilbereich */}
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    px: 3,
+                    py: 1.5,
+                    background: 'linear-gradient(135deg, #2E4CB8 0%, #4169E1 100%)',
+                    boxShadow: '0 2px 8px rgba(65, 105, 225, 0.3)',
+                    flexShrink: 0,
+                }}>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 700, letterSpacing: 0.5 }}>
+                        Benutzerverwaltung
                     </Typography>
-                    <Tooltip title="Profil & Abmelden">
-                        <IconButton onClick={(e) => setProfileMenuAnchor(e.currentTarget)} sx={{ p: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+                            {userFullName}
+                        </Typography>
+                        <Tooltip title="Profil & Abmelden">
+                            <IconButton onClick={(e) => setProfileMenuAnchor(e.currentTarget)} sx={{ p: 0.5 }}>
+                                <Avatar sx={{
+                                    width: 36,
+                                    height: 36,
+                                    background: 'rgba(255,255,255,0.2)',
+                                    border: '2px solid rgba(255,255,255,0.5)',
+                                    fontWeight: 700,
+                                    fontSize: '0.875rem',
+                                    color: 'white',
+                                }}>
+                                    {userInitials}
+                                </Avatar>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                </Box>
+    
+                {/* Profilmenü */}
+                <Menu
+                    anchorEl={profileMenuAnchor}
+                    open={Boolean(profileMenuAnchor)}
+                    onClose={() => setProfileMenuAnchor(null)}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                    PaperProps={{
+                        elevation: 4,
+                        sx: { borderRadius: 2, minWidth: 220, mt: 0.5 }
+                    }}
+                >
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2E4CB8' }}>
+                            {userFullName}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#666' }}>
+                            {keycloakUser.email || keycloakUser.preferred_username || ''}
+                        </Typography>
+                    </Box>
+                    <Divider />
+                    <MenuItem onClick={() => { setProfileMenuAnchor(null); setProfileDialogOpen(true); }} sx={{ gap: 1.5, py: 1.5 }}>
+                        <PersonIcon sx={{ color: '#4169E1', fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>Mein Profil</Typography>
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={() => { setProfileMenuAnchor(null); keycloak.logout(); }} sx={{ gap: 1.5, py: 1.5 }}>
+                        <LogoutIcon sx={{ color: '#F44336', fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: '#F44336' }}>Abmelden</Typography>
+                    </MenuItem>
+                </Menu>
+    
+                {/* Profil-Dialog */}
+                <Dialog open={profileDialogOpen} onClose={() => setProfileDialogOpen(false)} maxWidth="sm" fullWidth>
+                    <DialogTitle sx={{ background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)', color: 'white', fontWeight: 700, py: 2 }}>
+                        Mein Profil
+                    </DialogTitle>
+                    <DialogContent sx={{ pt: 3 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                             <Avatar sx={{
-                                width: 36,
-                                height: 36,
-                                background: 'rgba(255,255,255,0.2)',
-                                border: '2px solid rgba(255,255,255,0.5)',
+                                width: 64,
+                                height: 64,
+                                background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
                                 fontWeight: 700,
-                                fontSize: '0.875rem',
-                                color: 'white',
+                                fontSize: '1.5rem',
                             }}>
                                 {userInitials}
                             </Avatar>
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            </Box>
-
-            {/* Profilmenü */}
-            <Menu
-                anchorEl={profileMenuAnchor}
-                open={Boolean(profileMenuAnchor)}
-                onClose={() => setProfileMenuAnchor(null)}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                PaperProps={{
-                    elevation: 4,
-                    sx: { borderRadius: 2, minWidth: 220, mt: 0.5 }
-                }}
-            >
-                <Box sx={{ px: 2, py: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2E4CB8' }}>
-                        {userFullName}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: '#666' }}>
-                        {keycloakUser.email || keycloakUser.preferred_username || ''}
-                    </Typography>
-                </Box>
-                <Divider />
-                <MenuItem onClick={() => { setProfileMenuAnchor(null); setProfileDialogOpen(true); }} sx={{ gap: 1.5, py: 1.5 }}>
-                    <PersonIcon sx={{ color: '#4169E1', fontSize: 20 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Mein Profil</Typography>
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={() => { setProfileMenuAnchor(null); keycloak.logout(); }} sx={{ gap: 1.5, py: 1.5 }}>
-                    <LogoutIcon sx={{ color: '#F44336', fontSize: 20 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#F44336' }}>Abmelden</Typography>
-                </MenuItem>
-            </Menu>
-
-            {/* Profil-Dialog */}
-            <Dialog open={profileDialogOpen} onClose={() => setProfileDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)', color: 'white', fontWeight: 700, py: 2 }}>
-                    Mein Profil
-                </DialogTitle>
-                <DialogContent sx={{ pt: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                        <Avatar sx={{
-                            width: 64,
-                            height: 64,
-                            background: 'linear-gradient(135deg, #4169E1 0%, #2E4CB8 100%)',
-                            fontWeight: 700,
-                            fontSize: '1.5rem',
-                        }}>
-                            {userInitials}
-                        </Avatar>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#2E4CB8' }}>{userFullName}</Typography>
-                            <Typography variant="body2" sx={{ color: '#666' }}>{keycloakUser.email || '–'}</Typography>
+                            <Box>
+                                <Typography variant="h6" sx={{ fontWeight: 700, color: '#2E4CB8' }}>{userFullName}</Typography>
+                                <Typography variant="body2" sx={{ color: '#666' }}>{keycloakUser.email || '–'}</Typography>
+                            </Box>
                         </Box>
-                    </Box>
-                    <Divider sx={{ mb: 2 }} />
-                    {[
-                        { label: 'Benutzername', value: keycloakUser.preferred_username },
-                        { label: 'Vorname', value: keycloakUser.given_name },
-                        { label: 'Nachname', value: keycloakUser.family_name },
-                        { label: 'E-Mail', value: keycloakUser.email },
-                    ].map(({ label, value }) => (
-                        <Box key={label} sx={{ display: 'flex', py: 1, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#666', width: 140, flexShrink: 0 }}>{label}</Typography>
-                            <Typography variant="body2" sx={{ color: '#333' }}>{value || '–'}</Typography>
-                        </Box>
-                    ))}
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setProfileDialogOpen(false)} sx={{ color: '#666' }}>Schließen</Button>
-                </DialogActions>
-            </Dialog>
+                        <Divider sx={{ mb: 2 }} />
+                        {[
+                            { label: 'Benutzername', value: keycloakUser.preferred_username },
+                            { label: 'Vorname', value: keycloakUser.given_name },
+                            { label: 'Nachname', value: keycloakUser.family_name },
+                            { label: 'E-Mail', value: keycloakUser.email },
+                        ].map(({ label, value }) => (
+                            <Box key={label} sx={{ display: 'flex', py: 1, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#666', width: 140, flexShrink: 0 }}>{label}</Typography>
+                                <Typography variant="body2" sx={{ color: '#333' }}>{value || '–'}</Typography>
+                            </Box>
+                        ))}
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setProfileDialogOpen(false)} sx={{ color: '#666' }}>Schließen</Button>
+                    </DialogActions>
+                </Dialog>
             {/* Organisations-Kontext-Auswahl (nur eigene Orgs!) */}
             <Box sx={{ mx: 2, mt: 2, mb: 1, flexShrink: 0 }}>
                 <Card elevation={0} sx={{
