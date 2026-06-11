@@ -231,14 +231,9 @@ const Benutzerliste = () => {
     };
 
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
-    const handleViewDetails = async (userId) => {
-        try {
-            const response = await userService.getUserById(userId);
-            setSelectedUser(response.content || response);
-            setDetailOpen(true);
-        } catch (err) {
-            setError('Fehler beim Laden der Benutzerdetails');
-        }
+    const handleViewDetails = (user) => {
+        setSelectedUser(user);
+        setDetailOpen(true);
     };
 
     const handleCloseDetail = () => {
@@ -754,7 +749,7 @@ const Benutzerliste = () => {
                                                     borderColor: 'rgba(65, 105, 225, 0.3)',
                                                 },
                                             }}
-                                            onClick={() => handleViewDetails(user.userUuid)}
+                                            onClick={() => handleViewDetails(user)}
                                         >
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                                 <Box sx={{
@@ -903,7 +898,7 @@ const Benutzerliste = () => {
                                                     startIcon={<VisibilityIcon />}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleViewDetails(user.userUuid);
+                                                        handleViewDetails(user);
                                                     }}
                                                     sx={{
                                                         flex: 1,
@@ -1116,7 +1111,7 @@ const Benutzerliste = () => {
                                                                 <Tooltip title="Details">
                                                                     <Button
                                                                         size="small"
-                                                                        onClick={() => handleViewDetails(user.userUuid)}
+                                                                        onClick={() => handleViewDetails(user)}
                                                                         sx={{
                                                                             minWidth: 'auto',
                                                                             px: 1.5,
