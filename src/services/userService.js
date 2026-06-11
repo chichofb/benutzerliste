@@ -64,10 +64,8 @@ axiosInstance.interceptors.request.use(
             // Bearer Token zu Authorization-Header hinzufügen
             config.headers.Authorization = `Bearer ${keycloakInstance.token}`;
         }
-        // contextOrgUuid als Request-Header mitsenden (falls vorhanden)
-        if (storedContextOrgUuid) {
-            config.headers['ignrw-context-org'] = storedContextOrgUuid;
-        }
+        // contextOrgUuid als Request-Header immer mitsenden
+        config.headers['ignrw-context-org'] = storedContextOrgUuid;
         return config;
     },
     (error) => {

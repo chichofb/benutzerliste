@@ -73,35 +73,21 @@ const Benutzerliste = () => {
     const userFullName = [keycloakUser.given_name, keycloakUser.family_name].filter(Boolean).join(' ') || keycloakUser.preferred_username || 'Benutzer';
     const userInitials = [keycloakUser.given_name?.charAt(0), keycloakUser.family_name?.charAt(0)].filter(Boolean).join('') || '?';
 
+
     // User-Array aus verschiedenen Response-Formaten extrahieren
     const extractUsers = (response) => {
-        const normalizeUsers = (list) => {
-            if (!Array.isArray(list)) return [];
-            return list.map((user) => {
-                const nestedUser = user?.user || user?.content || user?.item || {};
-                return {
-                    ...nestedUser,
-                    ...user,
-                    username: user?.username || nestedUser?.username || '',
-                    userUuid: user?.userUuid || user?.userUid || nestedUser?.userUuid || nestedUser?.userUid || null,
-                };
-            });
-        };
-
-        if (Array.isArray(response)) return normalizeUsers(response);
+        if (Array.isArray(response)) return response;
         if (!response || typeof response !== 'object') return [];
-        if (Array.isArray(response.content)) return normalizeUsers(response.content);
-        if (Array.isArray(response.data)) return normalizeUsers(response.data);
-        if (Array.isArray(response.users)) return normalizeUsers(response.users);
-        if (Array.isArray(response.items)) return normalizeUsers(response.items);
-        if (Array.isArray(response.list)) return normalizeUsers(response.list);
+        if (Array.isArray(response.content)) return response.content;
+        if (Array.isArray(response.data)) return response.data;
+        if (Array.isArray(response.users)) return response.users;
+        if (Array.isArray(response.items)) return response.items;
+        if (Array.isArray(response.list)) return response.list;
         if (response._embedded) {
             const firstKey = Object.keys(response._embedded)[0];
-            if (firstKey && Array.isArray(response._embedded[firstKey])) {
-                return normalizeUsers(response._embedded[firstKey]);
-            }
+            if (firstKey && Array.isArray(response._embedded[firstKey])) return response._embedded[firstKey];
         }
-        if (response.userUuid || response.userUid) return normalizeUsers([response]);
+        if (response.userUuid) return [response];
         return [];
     };
 
@@ -166,6 +152,7 @@ const Benutzerliste = () => {
         };
     }, [keycloak?.authenticated]);
 
+    // Organisations-Kontext wechseln → Benutzer neu laden
     // Organisations-Kontext wechseln → Benutzer neu laden
     const handleContextOrgChange = (newOrgUuid) => {
         setContextOrgUuid(newOrgUuid);
@@ -244,61 +231,7 @@ const Benutzerliste = () => {
     };
 
     // WICHTIG: Alle Filter sind SERVER-SEITIG (bessere Performance bei großen Datenmengen)
-    const resolveUsername = (user) => {
-        if (!user || typeof user !== 'object') return '';
-        return user.username || user?.user?.username || user?.content?.username || user?.item?.username || '';
-    };
-
-    const resolveUserUuid = (userOrId) => {
-        if (typeof userOrId === 'string') return userOrId;
-        if (!userOrId || typeof userOrId !== 'object') return '';
-
-        // UUID aus direkten Feldern
-        const direct = userOrId.userUuid
-            || userOrId.userUid
-            || userOrId?.user?.userUuid
-            || userOrId?.user?.userUid
-            || userOrId?.content?.userUuid
-            || userOrId?.content?.userUid
-            || userOrId?.item?.userUuid
-            || userOrId?.item?.userUid;
-        if (direct) return direct;
-
-        // UUID aus HAL-Links extrahieren (z.B. links.self = "/api/users/uuid-hier")
-        const selfHref = userOrId?.links?.self?.href
-            || userOrId?._links?.self?.href
-            || (Array.isArray(userOrId?.links) && userOrId.links.find(l => l.rel === 'self')?.href)
-            || '';
-        if (selfHref) {
-            const match = selfHref.match(/\/users\/([^/?#]+)/);
-            if (match) return match[1];
-        }
-
-        return '';
-    };
-
-    const handleViewDetails = async (userOrId) => {
-        let userId = resolveUserUuid(userOrId);
-        console.log('[handleViewDetails] resolved userId:', userId, '| links:', userOrId?.links || userOrId?._links);
-
-        const username = typeof userOrId === 'object' ? resolveUsername(userOrId) : '';
-
-        if (!userId && username) {
-            try {
-                const lookup = await userService.getUsers({ username }, contextOrgUuid);
-                const lookupUsers = extractUsers(lookup);
-                const exactMatch = lookupUsers.find((user) => resolveUsername(user) === username);
-                userId = resolveUserUuid(exactMatch);
-            } catch {
-                // Fehler wird unten über die Standardmeldung behandelt
-            }
-        }
-
-        if (!userId) {
-            setError('Benutzer-ID fehlt. Details konnten nicht geladen werden.');
-            return;
-        }
-
+    const handleViewDetails = async (userId) => {
         try {
             const response = await userService.getUserById(userId);
             setSelectedUser(response.content || response);
@@ -796,14 +729,13 @@ const Benutzerliste = () => {
                                     </Typography>
                                 </Box>
                             ) : (
-                                displayedUsers.map((user, index) => {
+                                displayedUsers.map((user) => {
                                     const activeOrgs = user.organisations?.filter(org => !org.deleted) || [];
                                     const initials = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`;
-                                    const rowKey = `${resolveUserUuid(user) || user.username || 'user'}-${page * rowsPerPage + index}`;
 
                                     return (
                                         <Card
-                                            key={rowKey}
+                                            key={user.userUuid}
                                             elevation={0}
                                             sx={{
                                                 p: 3,
@@ -822,7 +754,7 @@ const Benutzerliste = () => {
                                                     borderColor: 'rgba(65, 105, 225, 0.3)',
                                                 },
                                             }}
-                                            onClick={() => handleViewDetails(user)}
+                                            onClick={() => handleViewDetails(user.userUuid)}
                                         >
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                                 <Box sx={{
@@ -971,7 +903,7 @@ const Benutzerliste = () => {
                                                     startIcon={<VisibilityIcon />}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleViewDetails(user);
+                                                        handleViewDetails(user.userUuid);
                                                     }}
                                                     sx={{
                                                         flex: 1,
@@ -1072,14 +1004,13 @@ const Benutzerliste = () => {
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            displayedUsers.map((user, index) => {
+                                            displayedUsers.map((user) => {
                                                 const activeOrgs = user.organisations?.filter(org => !org.deleted) || [];
                                                 const initials = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`;
-                                                const rowKey = `${resolveUserUuid(user) || user.username || 'user'}-${page * rowsPerPage + index}`;
 
                                                 return (
                                                     <TableRow
-                                                        key={rowKey}
+                                                        key={user.userUuid}
                                                         sx={{
                                                             transition: 'all 0.2s ease',
                                                             '&:hover': {
@@ -1185,7 +1116,7 @@ const Benutzerliste = () => {
                                                                 <Tooltip title="Details">
                                                                     <Button
                                                                         size="small"
-                                                                        onClick={() => handleViewDetails(user)}
+                                                                        onClick={() => handleViewDetails(user.userUuid)}
                                                                         sx={{
                                                                             minWidth: 'auto',
                                                                             px: 1.5,
@@ -1321,6 +1252,7 @@ const Benutzerliste = () => {
                 onClose={handleCloseForm}
                 onSuccess={handleFormSuccess}
                 editUser={editingUser}
+                contextOrgUuid={contextOrgUuid}
             />
         </Box>
     );
