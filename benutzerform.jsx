@@ -364,40 +364,40 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
 
             // Bei Edit: userUuid aus editUser extrahieren
             if (editUser) {
-                const isValidUuid = (val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+                const isValidUuid = (val) =>
+                    typeof val === 'string' &&
+                    !val.includes('{') &&
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
-                let userUuid = editUser.userUuid || editUser.uuid || editUser.id || editUser.userUid || editUser.userId;
-                if (userUuid && !isValidUuid(userUuid)) userUuid = null;
+                let userUuid = null;
+                // Direkte Felder
+                for (const field of ['userUuid', 'uuid', 'id', 'userUid', 'userId']) {
+                    if (isValidUuid(editUser[field])) { userUuid = editUser[field]; break; }
+                }
 
-                // Fallback: UUID aus links-Array (HAL: [{rel:"self", href:"..."}])
+                // Links-Array: UUID aus href extrahieren (nur echte UUIDs, keine Templates)
                 if (!userUuid && Array.isArray(editUser.links)) {
-                    const selfLink = editUser.links.find(l => l.rel === 'self');
-                    const href = selfLink?.href || '';
-                    const match = String(href).match(/\/users\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-                    if (match) userUuid = match[1];
+                    for (const link of editUser.links) {
+                        const match = String(link?.href || '').match(/\/users\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+                        if (match) { userUuid = match[1]; break; }
+                    }
                 }
 
-                // Fallback: _links (Spring HATEOAS)
-                if (!userUuid && editUser._links) {
-                    const href = editUser._links?.self?.href || '';
-                    const match = String(href).match(/\/users\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-                    if (match) userUuid = match[1];
-                }
-
-                // Letzter Fallback: per Username suchen → userUuid aus Suchergebnis
+                // Fallback: per Username suchen → userUuid aus Suchergebnis
                 if (!userUuid && editUser.username) {
                     try {
                         const searchResult = await userService.getUsers({ username: editUser.username });
                         const arr = Array.isArray(searchResult) ? searchResult : (searchResult?.content || []);
                         const found = arr.find(u => u.username === editUser.username);
                         if (found) {
-                            userUuid = found.userUuid || found.uuid || found.id;
-                            if (userUuid && !isValidUuid(userUuid)) userUuid = null;
-                            // auch in links des gefundenen Users suchen
+                            for (const field of ['userUuid', 'uuid', 'id', 'userUid', 'userId']) {
+                                if (isValidUuid(found[field])) { userUuid = found[field]; break; }
+                            }
                             if (!userUuid && Array.isArray(found.links)) {
-                                const selfLink = found.links.find(l => l.rel === 'self');
-                                const match = String(selfLink?.href || '').match(/\/users\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-                                if (match) userUuid = match[1];
+                                for (const link of found.links) {
+                                    const match = String(link?.href || '').match(/\/users\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+                                    if (match) { userUuid = match[1]; break; }
+                                }
                             }
                         }
                     } catch (searchErr) {
@@ -406,7 +406,7 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
                 }
 
                 if (!userUuid) {
-                    throw new Error(`Benutzer-UUID (UUID-Format) nicht gefunden. Links: ${JSON.stringify(editUser.links)}`);
+                    throw new Error(`Benutzer-UUID nicht ermittelbar – Backend gibt keine UUID zurück. Links: ${JSON.stringify(editUser.links)}`);
                 }
                 payload.userUuid = userUuid;
             }
