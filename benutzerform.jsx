@@ -365,27 +365,35 @@ const BenutzerFormStepper = ({ open, onClose, onSuccess, editUser = null }) => {
             // Bei Edit: userUuid aus editUser extrahieren
             // API-Liste gibt kein userUuid-Feld zurück, sondern HAL-Links
             if (editUser) {
-                console.log('editUser object keys:', Object.keys(editUser));
-                console.log('editUser full object:', JSON.stringify(editUser, null, 2));
-
                 // Versuche UUID aus bekannten Feldern
                 let userUuid = editUser.userUuid || editUser.uuid || editUser.id || editUser.userUid || editUser.userId;
 
-                // Fallback: UUID aus HAL _links.self.href extrahieren (z.B. ".../users/abc-123")
-                if (!userUuid && editUser.links) {
-                    const selfHref = editUser.links?.self?.href || editUser.links?.self || '';
-                    const match = String(selfHref).match(/\/users\/([a-f0-9\-]{36})/i);
-                    if (match) userUuid = match[1];
-                }
-                // Fallback: _links (Spring HAL)
-                if (!userUuid && editUser._links) {
-                    const selfHref = editUser._links?.self?.href || '';
-                    const match = String(selfHref).match(/\/users\/([a-f0-9\-]{36})/i);
+                // Fallback: UUID aus HAL _links.self.href extrahieren
+                if (!userUuid) {
+                    const selfHref = editUser?._links?.self?.href
+                        || editUser?.links?.self?.href
+                        || editUser?.links?.self
+                        || (Array.isArray(editUser?.links) && editUser.links.find(l => l.rel === 'self')?.href)
+                        || '';
+                    const match = String(selfHref).match(/\/users\/([a-f0-9-]{36})/i);
                     if (match) userUuid = match[1];
                 }
 
+                // Letzter Fallback: Benutzer per Username suchen → UUID ermitteln
+                if (!userUuid && editUser.username) {
+                    try {
+                        const searchResult = await userService.getUsers({ username: editUser.username });
+                        const found = Array.isArray(searchResult)
+                            ? searchResult.find(u => u.username === editUser.username)
+                            : searchResult;
+                        userUuid = found?.userUuid || found?.uuid || found?.id;
+                    } catch (searchErr) {
+                        console.error('UUID-Suche per Username fehlgeschlagen:', searchErr);
+                    }
+                }
+
                 if (!userUuid) {
-                    throw new Error(`Benutzer-UUID konnte nicht ermittelt werden. Verfügbare Felder: ${Object.keys(editUser).join(', ')}`);
+                    throw new Error(`Benutzer-UUID konnte nicht ermittelt werden. Felder: ${Object.keys(editUser).join(', ')}, Links: ${JSON.stringify(editUser.links)}`);
                 }
                 payload.userUuid = userUuid;
             }
